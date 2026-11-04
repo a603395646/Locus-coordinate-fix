@@ -4,6 +4,7 @@ import Foundation
 final class BackgroundKeepAlive: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private(set) var lastKnownCoordinate: CLLocationCoordinate2D?
+    var onCoordinateUpdate: (@MainActor (CLLocationCoordinate2D) -> Void)?
 
     override init() {
         super.init()
@@ -30,5 +31,9 @@ final class BackgroundKeepAlive: NSObject, CLLocationManagerDelegate {
               fix.horizontalAccuracy <= 100,
               abs(fix.timestamp.timeIntervalSinceNow) <= 30 else { return }
         lastKnownCoordinate = fix.coordinate
+        let coordinate = fix.coordinate
+        Task { @MainActor [weak self] in
+            self?.onCoordinateUpdate?(coordinate)
+        }
     }
 }
