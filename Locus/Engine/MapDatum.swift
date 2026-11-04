@@ -9,6 +9,10 @@ enum MapDatumMode: String, CaseIterable, Identifiable {
 
     static let defaultsKey = "locus.mapDatumMode"
 
+    static var current: MapDatumMode {
+        MapDatumMode(rawValue: UserDefaults.standard.string(forKey: defaultsKey) ?? "") ?? .automaticChina
+    }
+
     var id: String { rawValue }
 
     var title: String {
