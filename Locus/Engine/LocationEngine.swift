@@ -59,9 +59,12 @@ enum LocationEngine {
     static var isSessionActive: Bool { locationSimulation != nil }
 
     static func set(latitude: Double, longitude: Double, pairingPath: String, deviceIP: String) -> Result<Void, LocationEngineError> {
+        let mapCoordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        guard CLLocationCoordinate2DIsValid(mapCoordinate) else { return .failure(.invalidCoordinate) }
+        let deviceCoordinate = MapDatumMode.current.deviceCoordinate(fromMapCoordinate: mapCoordinate)
         var result: Result<Void, LocationEngineError> = .failure(.locationSet)
         queue.sync {
-            let code = setLocked(latitude: latitude, longitude: longitude, pairingPath: pairingPath, deviceIP: deviceIP)
+            let code = setLocked(latitude: deviceCoordinate.latitude, longitude: deviceCoordinate.longitude, pairingPath: pairingPath, deviceIP: deviceIP)
             result = code == ok ? .success(()) : .failure(.from(code: code))
         }
         return result
