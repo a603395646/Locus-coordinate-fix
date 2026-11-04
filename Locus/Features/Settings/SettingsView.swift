@@ -103,11 +103,7 @@ struct SettingsView: View {
                             Text(mode.title).tag(mode.rawValue)
                         }
                     }
-                    .onChange(of: mapDatumMode) { _, _ in
-                        if let coordinate = session.simulated {
-                            session.teleport(to: coordinate, pairing: pairing)
-                        }
-                    }
+                    .disabled(session.isSpoofing || session.isBusy || session.simulated != nil)
                 } footer: {
                     Text("Automatic mode aligns the map's mainland-China GCJ-02 coordinates with the iPhone's WGS-84 location. Stop the active session before changing this setting. Leave Off outside mainland China and near border areas.")
                 }
