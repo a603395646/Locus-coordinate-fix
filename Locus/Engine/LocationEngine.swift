@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import idevice
 
@@ -8,6 +9,7 @@ enum LocationEngineError: LocalizedError {
     case remoteServer
     case simulationCreate
     case locationSet
+    case invalidCoordinate
     case locationClear
     case notActive
 
@@ -19,6 +21,7 @@ enum LocationEngineError: LocalizedError {
         case .remoteServer: return "Connected to the tunnel but RemoteXPC handshake failed."
         case .simulationCreate: return "Could not open Apple’s location simulation service."
         case .locationSet: return "Failed to set simulated coordinates."
+        case .invalidCoordinate: return "The selected map coordinate is invalid."
         case .locationClear: return "Failed to clear simulated location."
         case .notActive: return "No active simulation session."
         }
