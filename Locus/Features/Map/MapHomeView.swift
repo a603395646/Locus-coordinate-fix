@@ -38,7 +38,7 @@ struct MapHomeView: View {
             // shifts convert() upward by ~status-bar height.
             MapReader { proxy in
                 Map(position: $position) {
-                    if let current = session.isSpoofing ? session.simulated : session.realCoordinate {
+                    if !session.isSpoofing, let current = session.realCoordinate {
                         Annotation("Current location", coordinate: current) {
                             ZStack {
                                 Circle().fill(Color.blue.opacity(0.18)).frame(width: 34, height: 34)
