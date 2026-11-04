@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var showPairOnDevice = false
     @State private var showNameEasterEgg = false
     @State private var tunnelIP = TunnelConfig.targetIP
+    @AppStorage(MapDatumMode.defaultsKey) private var mapDatumMode = MapDatumMode.automaticChina.rawValue
     @State private var localDevVPNInstalled = LocalDevVPN.isInstalled
     @Environment(\.scenePhase) private var scenePhase
 
@@ -94,6 +95,21 @@ struct SettingsView: View {
                     Text("Tunnel")
                 } footer: {
                     Text("Connect LocalDevVPN before teleporting. Default tunnel IP is 10.7.0.1. Start a spoof on Wi‑Fi first; it can keep working on cellular afterward.")
+                }
+
+                Section {
+                    Picker("China map coordinate correction", selection: $mapDatumMode) {
+                        ForEach(MapDatumMode.allCases) { mode in
+                            Text(mode.title).tag(mode.rawValue)
+                        }
+                    }
+                    .onChange(of: mapDatumMode) { _, _ in
+                        if let coordinate = session.simulated {
+                            session.teleport(to: coordinate, pairing: pairing)
+                        }
+                    }
+                } footer: {
+                    Text("Automatic mode aligns the map's mainland-China GCJ-02 coordinates with the iPhone's WGS-84 location. Stop the active session before changing this setting. Leave Off outside mainland China and near border areas.")
                 }
 
                 Section("Privacy") {
