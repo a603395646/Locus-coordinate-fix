@@ -1,13 +1,14 @@
 name: iOS build and coordinate tests
 
 on:
-  push:
-    branches:
-      - fix/mainland-map-coordinate-puck
   pull_request:
     branches:
       - main
   workflow_dispatch:
+
+concurrency:
+  group: locus-ios-build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
