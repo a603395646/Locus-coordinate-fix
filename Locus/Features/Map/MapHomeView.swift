@@ -38,7 +38,15 @@ struct MapHomeView: View {
             // shifts convert() upward by ~status-bar height.
             MapReader { proxy in
                 Map(position: $position) {
-                    UserAnnotation()
+                    if let current = session.isSpoofing ? session.simulated : session.realCoordinate {
+                        Annotation("Current location", coordinate: current) {
+                            ZStack {
+                                Circle().fill(Color.blue.opacity(0.18)).frame(width: 34, height: 34)
+                                Circle().fill(Color.blue).frame(width: 14, height: 14)
+                                    .overlay(Circle().stroke(.white, lineWidth: 2))
+                            }
+                        }
+                    }
 
                     if let pin = session.pin {
                         Annotation("", coordinate: pin, anchor: .bottom) {
