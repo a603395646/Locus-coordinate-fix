@@ -44,12 +44,78 @@ enum MapDatumMode: String, CaseIterable, Identifiable {
 }
 
 enum ChinaCoordinateTransform {
-    // Deliberately a coarse coverage rectangle, not an authoritative national border.
-    // The automatic mode is intended for ordinary mainland-China use, not border areas.
+    // GCJ-02 is used for mainland-China map coordinates. The broad coverage box also
+    // contains nearby regions where Apple Maps coordinates are WGS-84, so exclude them.
     static func isWithinMainlandCoverage(_ coordinate: CLLocationCoordinate2D) -> Bool {
-        CLLocationCoordinate2DIsValid(coordinate)
-            && (72.004...137.8347).contains(coordinate.longitude)
-            && (0.8293...55.8271).contains(coordinate.latitude)
+        guard CLLocationCoordinate2DIsValid(coordinate),
+              (72.004...137.8347).contains(coordinate.longitude),
+              (0.8293...55.8271).contains(coordinate.latitude) else {
+            return false
+        }
+
+        return !isInHongKong(coordinate)
+            && !isInMacau(coordinate)
+            && !isInTaiwan(coordinate)
+    }
+
+    // Approximate Hong Kong boundary. The northern edge follows the Shenzhen border
+    // at a coarse resolution; points very close to the border should be field-checked.
+    private static let hongKongBoundary: [(longitude: Double, latitude: Double)] = [
+        (113.80, 22.10),
+        (113.80, 22.42),
+        (113.90, 22.46),
+        (114.00, 22.49),
+        (114.10, 22.52),
+        (114.20, 22.55),
+        (114.32, 22.54),
+        (114.50, 22.44),
+        (114.50, 22.10)
+    ]
+
+    private static func isInHongKong(_ coordinate: CLLocationCoordinate2D) -> Bool {
+        contains(coordinate, in: hongKongBoundary)
+    }
+
+    // Macau and Zhuhai meet at a very narrow boundary; this small rectangle is an
+    // intentional approximation for ordinary city-level coordinate selection.
+    private static func isInMacau(_ coordinate: CLLocationCoordinate2D) -> Bool {
+        (22.10...22.215).contains(coordinate.latitude)
+            && (113.525...113.605).contains(coordinate.longitude)
+    }
+
+    // Taiwan main island and Penghu. Kinmen/Matsu are intentionally not included
+    // because their proximity to the mainland makes a broad rectangle ambiguous.
+    private static func isInTaiwan(_ coordinate: CLLocationCoordinate2D) -> Bool {
+        (21.85...25.35).contains(coordinate.latitude)
+            && (119.3...122.1).contains(coordinate.longitude)
+    }
+
+    private static func contains(
+        _ coordinate: CLLocationCoordinate2D,
+        in polygon: [(longitude: Double, latitude: Double)]
+    ) -> Bool {
+        guard polygon.count >= 3 else { return false }
+
+        var inside = false
+        var previousIndex = polygon.count - 1
+        for currentIndex in polygon.indices {
+            let current = polygon[currentIndex]
+            let previous = polygon[previousIndex]
+            let crossesLatitude = (current.latitude > coordinate.latitude)
+                != (previous.latitude > coordinate.latitude)
+
+            if crossesLatitude {
+                let crossingLongitude = (previous.longitude - current.longitude)
+                    * (coordinate.latitude - current.latitude)
+                    / (previous.latitude - current.latitude)
+                    + current.longitude
+                if coordinate.longitude < crossingLongitude {
+                    inside.toggle()
+                }
+            }
+            previousIndex = currentIndex
+        }
+        return inside
     }
 
     static func wgs84ToGCJ02(_ coordinate: CLLocationCoordinate2D) -> CLLocationCoordinate2D {
