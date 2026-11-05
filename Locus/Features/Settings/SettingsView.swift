@@ -110,6 +110,17 @@ struct SettingsView: View {
                     Text("Automatic mode aligns mainland-China map coordinates (GCJ-02) with the iPhone's WGS-84 location. GPX import and export use WGS-84 and are converted for the map automatically. Stop the active session before changing this setting. Leave Off outside mainland China and near border areas.")
                 }
 
+                Section("WLOC-compatible tools") {
+                    NavigationLink {
+                        WLocProfilesView()
+                            .environmentObject(session)
+                    } label: {
+                        Label("Location profiles", systemImage: "mappin.and.ellipse")
+                    }
+                } footer: {
+                    Text("Save, restore, import, and export named map coordinates locally. This module does not require a VPN or network extension.")
+                }
+
                 Section("Location diagnostics") {
                     Button {
                         showLocationDiagnostics = true
