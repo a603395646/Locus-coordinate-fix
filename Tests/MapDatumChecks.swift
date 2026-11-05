@@ -42,6 +42,27 @@ struct MapDatumChecks {
             assert(abs(restored.longitude - location.wgs84.longitude) < 0.0000001)
         }
 
+        // Apple Maps coordinates in Hong Kong, Macau and Taiwan are already WGS-84.
+        // The mainland-only GCJ-02 transform must leave these representative locations intact.
+        let appleWGS84Regions: [(name: String, coordinate: CLLocationCoordinate2D)] = [
+            ("Hong Kong", CLLocationCoordinate2D(latitude: 22.284774, longitude: 114.159437)),
+            ("Macau", CLLocationCoordinate2D(latitude: 22.148148, longitude: 113.555399)),
+            ("Taipei", CLLocationCoordinate2D(latitude: 25.033626, longitude: 121.564215))
+        ]
+
+        for region in appleWGS84Regions {
+            assert(
+                !ChinaCoordinateTransform.isWithinMainlandCoverage(region.coordinate),
+                "\(region.name) must not be treated as mainland GCJ-02"
+            )
+            let mapCoordinate = MapDatumMode.automaticChina.mapCoordinate(fromWGS84: region.coordinate)
+            let deviceCoordinate = MapDatumMode.automaticChina.deviceCoordinate(fromMapCoordinate: region.coordinate)
+            assert(mapCoordinate.latitude == region.coordinate.latitude)
+            assert(mapCoordinate.longitude == region.coordinate.longitude)
+            assert(deviceCoordinate.latitude == region.coordinate.latitude)
+            assert(deviceCoordinate.longitude == region.coordinate.longitude)
+        }
+
         let london = CLLocationCoordinate2D(latitude: 51.5074, longitude: -0.1278)
         let londonMap = MapDatumMode.automaticChina.mapCoordinate(fromWGS84: london)
         let londonDevice = MapDatumMode.automaticChina.deviceCoordinate(fromMapCoordinate: london)
