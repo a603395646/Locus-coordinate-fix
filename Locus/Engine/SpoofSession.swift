@@ -89,6 +89,8 @@ final class SpoofSession: ObservableObject {
     private var backgroundTask = UIBackgroundTaskIdentifier.invalid
     private var joystickVector: CGVector = .zero
     private let locationKeeper = BackgroundKeepAlive()
+    @Published private(set) var latestRealWGS84Coordinate: CLLocationCoordinate2D?
+    @Published private(set) var latestLocationSnapshot: LocationFixSnapshot?
 
     private let favoritesKey = "locus.favorites"
     private let recentsKey = "locus.recents"
@@ -96,6 +98,12 @@ final class SpoofSession: ObservableObject {
     init() {
         favorites = SavedPlace.load(key: favoritesKey)
         recents = SavedPlace.load(key: recentsKey)
+        locationKeeper.onCoordinateUpdate = { [weak self] coordinate in
+            self?.latestRealWGS84Coordinate = coordinate
+        }
+        locationKeeper.onDiagnosticsUpdate = { [weak self] snapshot in
+            self?.latestLocationSnapshot = snapshot
+        }
     }
 
     var isSpoofing: Bool {
@@ -139,7 +147,8 @@ final class SpoofSession: ObservableObject {
 
     /// Best-known real device coordinate (not the teleport pin).
     var realCoordinate: CLLocationCoordinate2D? {
-        locationKeeper.lastKnownCoordinate
+        (latestRealWGS84Coordinate ?? locationKeeper.lastKnownCoordinate)
+            .map { MapDatumMode.current.mapCoordinate(fromWGS84: $0) }
     }
 
     /// Start lightweight GPS updates for the map puck / locate button.
@@ -152,7 +161,7 @@ final class SpoofSession: ObservableObject {
             lastError = "Import an RPPairing file in Settings first."
             return
         }
-        let start = simulated ?? pin ?? locationKeeper.lastKnownCoordinate
+        let start = simulated ?? pin ?? realCoordinate
         guard let start else {
             lastError = "Drop a pin or teleport somewhere before using the joystick."
             return

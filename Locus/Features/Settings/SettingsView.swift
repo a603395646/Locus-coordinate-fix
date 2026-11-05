@@ -1,3 +1,4 @@
+import CoreLocation
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -10,7 +11,9 @@ struct SettingsView: View {
     @State private var showPairOnDevice = false
     @State private var showNameEasterEgg = false
     @State private var tunnelIP = TunnelConfig.targetIP
+    @AppStorage(MapDatumMode.defaultsKey) private var mapDatumMode = MapDatumMode.automaticChina.rawValue
     @State private var localDevVPNInstalled = LocalDevVPN.isInstalled
+    @State private var showLocationDiagnostics = false
     @Environment(\.scenePhase) private var scenePhase
 
     private var supportsOnDevicePairing: Bool {
@@ -96,6 +99,25 @@ struct SettingsView: View {
                     Text("Connect LocalDevVPN before teleporting. Default tunnel IP is 10.7.0.1. Start a spoof on Wi‑Fi first; it can keep working on cellular afterward.")
                 }
 
+                Section {
+                    Picker("China map coordinate correction", selection: $mapDatumMode) {
+                        ForEach(MapDatumMode.allCases) { mode in
+                            Text(mode.title).tag(mode.rawValue)
+                        }
+                    }
+                    .disabled(session.isSpoofing || session.isBusy || session.simulated != nil)
+                } footer: {
+                    Text("Automatic mode aligns mainland-China map coordinates (GCJ-02) with the iPhone's WGS-84 location. GPX import and export use WGS-84 and are converted for the map automatically. Stop the active session before changing this setting. Leave Off outside mainland China and near border areas.")
+                }
+
+                Section("Location diagnostics") {
+                    Button {
+                        showLocationDiagnostics = true
+                    } label: {
+                        Label("View location diagnostics", systemImage: "waveform.path.ecg")
+                    }
+                }
+
                 Section("Privacy") {
                     Text("Fully on-device. Favorites and recents stay in UserDefaults. No analytics, no accounts, nothing uploaded.")
                         .font(.footnote)
@@ -152,6 +174,10 @@ struct SettingsView: View {
             .sheet(isPresented: $showPairOnDevice) {
                 PairOnDeviceView()
                     .environmentObject(pairing)
+            }
+            .sheet(isPresented: $showLocationDiagnostics) {
+                LocationDiagnosticsView(session: session)
+                    .presentationDetents([.medium, .large])
             }
             .fullScreenCover(isPresented: $showNameEasterEgg) {
                 LocusEasterEggView()
@@ -258,5 +284,116 @@ struct PlacesView: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+}
+
+
+private struct LocationDiagnosticsView: View {
+    @ObservedObject var session: SpoofSession
+    @Environment(\.dismiss) private var dismiss
+
+    private var mapTarget: CLLocationCoordinate2D? {
+        session.simulated ?? session.pin
+    }
+
+    private var deviceTarget: CLLocationCoordinate2D? {
+        mapTarget.map { MapDatumMode.current.deviceCoordinate(fromMapCoordinate: $0) }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Engine") {
+                    LabeledContent("VPN", value: LocalDevVPN.isConnected ? "Connected" : "Not connected")
+                    LabeledContent("DVT simulation", value: LocationEngine.isSessionActive ? "Active" : "Inactive")
+                    LabeledContent("Session", value: session.status.label)
+                    LabeledContent("Coordinate mode", value: MapDatumMode.current.title)
+                }
+
+                Section("Coordinates") {
+                    coordinateRow("Map target", coordinate: mapTarget)
+                    coordinateRow("WGS-84 target", coordinate: deviceTarget)
+                    if let fix = session.latestLocationSnapshot {
+                        coordinateRow(
+                            "Latest Core Location fix",
+                            coordinate: CLLocationCoordinate2D(latitude: fix.latitude, longitude: fix.longitude)
+                        )
+                    } else {
+                        Text("Waiting for a Core Location update…")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                if let fix = session.latestLocationSnapshot {
+                    Section("Fix quality") {
+                        LabeledContent("Horizontal accuracy", value: accuracyText(fix.horizontalAccuracy))
+                        LabeledContent("Vertical accuracy", value: accuracyText(fix.verticalAccuracy))
+                        LabeledContent("Altitude", value: metersText(fix.altitude))
+                        LabeledContent("Speed", value: speedText(fix.speed))
+                        LabeledContent("Course", value: degreesText(fix.course))
+                        LabeledContent("Fix age", value: ageText(fix.timestamp))
+                        LabeledContent("Authorization", value: fix.authorization)
+                        LabeledContent("Precision permission", value: fix.accuracyAuthorization)
+                    }
+
+                    Section("Location source") {
+                        LabeledContent("Software simulated", value: boolText(fix.isSimulatedBySoftware))
+                        LabeledContent("External accessory", value: boolText(fix.isProducedByAccessory))
+                    }
+                }
+
+                Section {
+                    Text("These values are reported to Locus by its own Core Location manager. This screen cannot inspect what another app receives or how another service validates a location.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Location diagnostics")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func coordinateRow(_ title: String, coordinate: CLLocationCoordinate2D?) -> some View {
+        LabeledContent(title) {
+            if let coordinate {
+                Text(String(format: "%.6f, %.6f", coordinate.latitude, coordinate.longitude))
+                    .font(.caption.monospaced())
+                    .multilineTextAlignment(.trailing)
+                    .textSelection(.enabled)
+            } else {
+                Text("—").foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func accuracyText(_ value: CLLocationAccuracy) -> String {
+        value >= 0 ? String(format: "%.1f m", value) : "Unavailable"
+    }
+
+    private func metersText(_ value: CLLocationDistance) -> String {
+        String(format: "%.1f m", value)
+    }
+
+    private func speedText(_ value: CLLocationSpeed) -> String {
+        value >= 0 ? String(format: "%.2f m/s", value) : "Unavailable"
+    }
+
+    private func degreesText(_ value: CLLocationDirection) -> String {
+        value >= 0 ? String(format: "%.1f°", value) : "Unavailable"
+    }
+
+    private func ageText(_ timestamp: Date) -> String {
+        let seconds = max(0, Date().timeIntervalSince(timestamp))
+        return String(format: "%.1f s ago", seconds)
+    }
+
+    private func boolText(_ value: Bool?) -> String {
+        guard let value else { return "Unavailable" }
+        return value ? "Yes" : "No"
     }
 }
