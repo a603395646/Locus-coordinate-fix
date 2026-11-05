@@ -90,6 +90,7 @@ final class SpoofSession: ObservableObject {
     private var joystickVector: CGVector = .zero
     private let locationKeeper = BackgroundKeepAlive()
     @Published private(set) var latestRealWGS84Coordinate: CLLocationCoordinate2D?
+    @Published private(set) var latestLocationSnapshot: LocationFixSnapshot?
 
     private let favoritesKey = "locus.favorites"
     private let recentsKey = "locus.recents"
@@ -99,6 +100,9 @@ final class SpoofSession: ObservableObject {
         recents = SavedPlace.load(key: recentsKey)
         locationKeeper.onCoordinateUpdate = { [weak self] coordinate in
             self?.latestRealWGS84Coordinate = coordinate
+        }
+        locationKeeper.onDiagnosticsUpdate = { [weak self] snapshot in
+            self?.latestLocationSnapshot = snapshot
         }
     }
 
