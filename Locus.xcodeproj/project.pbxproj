@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A11CE0010000000000000011 /* WLocProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0010000000000000012 /* WLocProfile.swift */; };
+		A11CE0010000000000000013 /* WLocProfilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0010000000000000014 /* WLocProfilesView.swift */; };
 		0C78ABD1E0B70A0732F7EE2F /* PairOnDeviceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE84038C9223A84BAFFAE233 /* PairOnDeviceView.swift */; };
 		170627CC7AAA8335B2A3277F /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = D8943CD40A866E202F7964F6 /* AppIcon.icon */; };
 		1A9609434342E76342B42B54 /* LocusEasterEggView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361C48381EA09BB299BD110E /* LocusEasterEggView.swift */; };
@@ -36,6 +38,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A11CE0010000000000000012 /* WLocProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WLocProfile.swift; sourceTree = "<group>"; };
+		A11CE0010000000000000014 /* WLocProfilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WLocProfilesView.swift; sourceTree = "<group>"; };
 		03DE64DA7097F210F1075553 /* LocusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocusApp.swift; sourceTree = "<group>"; };
 		0E1C1367D937C33DF4F1FBE6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		1FC0C702516F159A7EF6D853 /* RouteBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteBuilder.swift; sourceTree = "<group>"; };
@@ -72,6 +76,7 @@
 		04819CB404D166B850594890 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				A11CE0010000000000000014 /* WLocProfilesView.swift */,
 				361C48381EA09BB299BD110E /* LocusEasterEggView.swift */,
 				BE84038C9223A84BAFFAE233 /* PairOnDeviceView.swift */,
 				0E1C1367D937C33DF4F1FBE6 /* SettingsView.swift */,
@@ -163,6 +168,7 @@
 		B32582618AEAB100F3C055BD /* Engine */ = {
 			isa = PBXGroup;
 			children = (
+				A11CE0010000000000000012 /* WLocProfile.swift */,
 				5415BEF759B8C8AF04096B3E /* BackgroundKeepAlive.swift */,
 				A11CE0010000000000000002 /* MapDatum.swift */,
 				91E2EBD3F6F937176E4EC13F /* DeviceTunnel.swift */,
@@ -291,6 +297,8 @@
 			files = (
 				C5B176B29163E524B776757A /* BackgroundKeepAlive.swift in Sources */,
 				A11CE0010000000000000001 /* MapDatum.swift in Sources */,
+				A11CE0010000000000000011 /* WLocProfile.swift in Sources */,
+				A11CE0010000000000000013 /* WLocProfilesView.swift in Sources */,
 				4A19A245C3B57EB4E5B02CDE /* DeviceTunnel.swift in Sources */,
 				AB35A419877FF9CA0B4AB114 /* JoystickPad.swift in Sources */,
 				824D08C2AC8FD477F58DE51F /* LocalDevVPN.swift in Sources */,
