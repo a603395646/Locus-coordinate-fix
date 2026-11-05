@@ -105,7 +105,7 @@ struct SettingsView: View {
                     }
                     .disabled(session.isSpoofing || session.isBusy || session.simulated != nil)
                 } footer: {
-                    Text("Automatic mode aligns the map's mainland-China GCJ-02 coordinates with the iPhone's WGS-84 location. Stop the active session before changing this setting. Leave Off outside mainland China and near border areas.")
+                    Text("Automatic mode aligns mainland-China map coordinates (GCJ-02) with the iPhone's WGS-84 location. GPX import and export use WGS-84 and are converted for the map automatically. Stop the active session before changing this setting. Leave Off outside mainland China and near border areas.")
                 }
 
                 Section("Privacy") {
