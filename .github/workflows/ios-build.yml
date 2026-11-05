@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - test/isolated-bundle-id
   workflow_dispatch:
 
 concurrency:
