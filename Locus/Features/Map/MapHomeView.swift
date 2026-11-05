@@ -38,7 +38,15 @@ struct MapHomeView: View {
             // shifts convert() upward by ~status-bar height.
             MapReader { proxy in
                 Map(position: $position) {
-                    UserAnnotation()
+                    if !session.isSpoofing, let current = session.realCoordinate {
+                        Annotation("Current location", coordinate: current) {
+                            ZStack {
+                                Circle().fill(Color.blue.opacity(0.18)).frame(width: 34, height: 34)
+                                Circle().fill(Color.blue).frame(width: 14, height: 14)
+                                    .overlay(Circle().stroke(.white, lineWidth: 2))
+                            }
+                        }
+                    }
 
                     if let pin = session.pin {
                         Annotation("", coordinate: pin, anchor: .bottom) {
@@ -389,9 +397,13 @@ struct MapHomeView: View {
 
     private func importGPX(_ url: URL) {
         do {
-            let coords = try GPXCodec.parse(url)
-            routeCoords = RouteBuilder.sample(coordinates: coords, every: 10)
-            if let first = coords.first {
+            // GPX coordinates are WGS-84; convert them into the map's coordinate space.
+            let gpxCoordinates = try GPXCodec.parse(url)
+            let mapCoordinates = gpxCoordinates.map {
+                MapDatumMode.current.mapCoordinate(fromWGS84: $0)
+            }
+            routeCoords = RouteBuilder.sample(coordinates: mapCoordinates, every: 10)
+            if let first = mapCoordinates.first {
                 session.pin = first
                 position = .region(MKCoordinateRegion(center: first, latitudinalMeters: 2000, longitudinalMeters: 2000))
             }
@@ -406,7 +418,11 @@ struct MapHomeView: View {
             session.lastError = "Nothing to export."
             return
         }
-        let gpx = GPXCodec.export(path)
+        // GPX is a WGS-84 interchange format; convert map coordinates back on export.
+        let gpxCoordinates = path.map {
+            MapDatumMode.current.deviceCoordinate(fromMapCoordinate: $0)
+        }
+        let gpx = GPXCodec.export(gpxCoordinates)
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("Locus-Route.gpx")
         do {
             try gpx.data(using: .utf8)?.write(to: url)

@@ -1,0 +1,55 @@
+name: iOS build and coordinate tests
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: locus-ios-build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-26-intel
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Test China coordinate conversion
+        run: |
+          xcrun swiftc -parse-as-library Locus/Engine/MapDatum.swift Tests/MapDatumChecks.swift -o "$RUNNER_TEMP/map-datum-checks"
+          "$RUNNER_TEMP/map-datum-checks"
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Build unsigned iOS app
+        run: |
+          xcodebuild -project Locus.xcodeproj \
+            -scheme Locus \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO build
+
+      - name: Package unsigned IPA
+        run: |
+          APP_PATH="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/Locus.app"
+          test -d "$APP_PATH"
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R "$APP_PATH" "$RUNNER_TEMP/ipa/Payload/Locus.app"
+          (cd "$RUNNER_TEMP/ipa" && /usr/bin/zip -qry "$GITHUB_WORKSPACE/Locus-coordinate-fix-unsigned.ipa" Payload)
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Locus-coordinate-fix-unsigned-ipa
+          path: Locus-coordinate-fix-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 7
