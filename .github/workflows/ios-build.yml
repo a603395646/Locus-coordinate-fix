@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - test/isolated-bundle-id
+      - feat/wloc-native-core
   workflow_dispatch:
 
 concurrency:
@@ -25,7 +26,7 @@ jobs:
 
       - name: Test China coordinate conversion
         run: |
-          xcrun swiftc -parse-as-library Locus/Engine/MapDatum.swift Tests/MapDatumChecks.swift -o "$RUNNER_TEMP/map-datum-checks"
+          xcrun swiftc -parse-as-library Locus/Engine/MapDatum.swift Locus/Engine/WLocProfile.swift Tests/MapDatumChecks.swift -o "$RUNNER_TEMP/map-datum-checks"
           "$RUNNER_TEMP/map-datum-checks"
 
       - name: Show Xcode version
