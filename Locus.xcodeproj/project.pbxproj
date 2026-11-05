@@ -384,7 +384,7 @@
 				CODE_SIGN_ENTITLEMENTS = Locus/Resources/Locus.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_BITCODE = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -490,7 +490,7 @@
 				CODE_SIGN_ENTITLEMENTS = Locus/Resources/Locus.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_BITCODE = NO;
 				GENERATE_INFOPLIST_FILE = NO;
