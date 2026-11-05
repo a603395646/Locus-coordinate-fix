@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-15-intel
+    runs-on: macos-26-intel
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -24,6 +24,9 @@ jobs:
         run: |
           xcrun swiftc -parse-as-library Locus/Engine/MapDatum.swift Tests/MapDatumChecks.swift -o "$RUNNER_TEMP/map-datum-checks"
           "$RUNNER_TEMP/map-datum-checks"
+
+      - name: Show Xcode version
+        run: xcodebuild -version
 
       - name: Build unsigned iOS app
         run: |
