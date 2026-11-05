@@ -78,6 +78,22 @@ struct MapDatumChecks {
         assert(unchangedDevice.latitude == beijingGCJ02.latitude)
         assert(unchangedDevice.longitude == beijingGCJ02.longitude)
 
-        print("Map datum checks passed")
+        // WLOC-compatible local profile export/import round-trip.
+        let profile = WLocProfile(
+            name: "Chongqing test",
+            coordinate: CLLocationCoordinate2D(latitude: 29.56301, longitude: 106.55156),
+            coordinateReference: "GCJ-02"
+        )
+        assert(profile.isValid)
+        let exported = try! WLocProfile.exportJSON([profile])
+        let imported = try! WLocProfile.importJSON(Data(exported.utf8))
+        assert(imported.count == 1)
+        assert(imported[0].id == profile.id)
+        assert(imported[0].name == profile.name)
+        assert(imported[0].coordinateReference == profile.coordinateReference)
+        assert(abs(imported[0].latitude - profile.latitude) < 1e-10)
+        assert(abs(imported[0].longitude - profile.longitude) < 1e-10)
+
+        print("Map datum and WLOC profile checks passed")
     }
 }
