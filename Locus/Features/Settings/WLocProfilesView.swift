@@ -10,8 +10,6 @@ struct WLocProfilesView: View {
     @State private var profileName = ""
     @State private var showImporter = false
     @State private var importMessage: String?
-    @State private var exportText = ""
-    @State private var showExportError = false
 
     private var exportJSON: String {
         (try? WLocProfile.exportJSON(profiles)) ?? ""
@@ -54,7 +52,7 @@ struct WLocProfilesView: View {
                                 .foregroundStyle(.secondary)
                             HStack {
                                 Button {
-                                    session.pin = profile.coordinate
+                                    session.pin = profile.mapCoordinate(for: MapDatumMode.current)
                                     dismiss()
                                 } label: {
                                     Label("Show on map", systemImage: "map")
