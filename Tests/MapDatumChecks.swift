@@ -94,6 +94,34 @@ struct MapDatumChecks {
         assert(abs(imported[0].latitude - profile.latitude) < 1e-10)
         assert(abs(imported[0].longitude - profile.longitude) < 1e-10)
 
+        // A saved profile must be converted when the map datum changes later.
+        let chongqingWGS84 = CLLocationCoordinate2D(latitude: 29.56301, longitude: 106.55156)
+        let chongqingGCJ02 = MapDatumMode.automaticChina.mapCoordinate(fromWGS84: chongqingWGS84)
+        let wgsProfile = WLocProfile(
+            name: "WGS profile",
+            coordinate: chongqingWGS84,
+            coordinateReference: "WGS-84"
+        )
+        let gcjProfile = WLocProfile(
+            name: "GCJ profile",
+            coordinate: chongqingGCJ02,
+            coordinateReference: "GCJ-02"
+        )
+        let wgsProfileOnChinaMap = wgsProfile.mapCoordinate(for: .automaticChina)
+        assert(abs(wgsProfileOnChinaMap.latitude - chongqingGCJ02.latitude) < 0.000001)
+        assert(abs(wgsProfileOnChinaMap.longitude - chongqingGCJ02.longitude) < 0.000001)
+
+        let gcjProfileOnOriginalMap = gcjProfile.mapCoordinate(for: .off)
+        assert(abs(gcjProfileOnOriginalMap.latitude - chongqingWGS84.latitude) < 0.0000001)
+        assert(abs(gcjProfileOnOriginalMap.longitude - chongqingWGS84.longitude) < 0.0000001)
+
+        let invalidGCJProfile = WLocProfile(
+            name: "Invalid Hong Kong GCJ profile",
+            coordinate: CLLocationCoordinate2D(latitude: 22.284774, longitude: 114.159437),
+            coordinateReference: "GCJ-02"
+        )
+        assert(!invalidGCJProfile.isValid)
+
         print("Map datum and WLOC profile checks passed")
     }
 }
