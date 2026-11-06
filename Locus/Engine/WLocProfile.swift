@@ -15,6 +15,21 @@ struct WLocProfile: Identifiable, Codable, Equatable {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 
+    /// Returns this profile in the coordinate datum currently used by the map.
+    /// Profiles retain their original datum so switching map modes cannot shift saved places.
+    func mapCoordinate(for mode: MapDatumMode) -> CLLocationCoordinate2D {
+        switch coordinateReference {
+        case "WGS-84":
+            return mode.mapCoordinate(fromWGS84: coordinate)
+        case "GCJ-02":
+            return mode == .automaticChina
+                ? coordinate
+                : MapDatumMode.automaticChina.deviceCoordinate(fromMapCoordinate: coordinate)
+        default:
+            return coordinate
+        }
+    }
+
     init(
         id: UUID = UUID(),
         name: String,
@@ -31,9 +46,13 @@ struct WLocProfile: Identifiable, Codable, Equatable {
     }
 
     var isValid: Bool {
-        CLLocationCoordinate2DIsValid(coordinate)
+        let supportedReference = coordinateReference == "WGS-84"
+            || (coordinateReference == "GCJ-02"
+                && ChinaCoordinateTransform.isWithinMainlandCoverage(coordinate))
+        return CLLocationCoordinate2DIsValid(coordinate)
             && latitude.isFinite
             && longitude.isFinite
+            && supportedReference
             && !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
