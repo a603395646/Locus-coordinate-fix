@@ -73,6 +73,8 @@ final class SpoofSession: ObservableObject {
     @Published var status: SpoofStatus = .idle
     @Published var pin: CLLocationCoordinate2D?
     @Published var simulated: CLLocationCoordinate2D?
+    @Published private(set) var mapFocusCoordinate: CLLocationCoordinate2D?
+    @Published private(set) var mapFocusRequestID: UUID?
     @Published var travelMode: TravelMode = .walk
     @Published var mapStyleIndex: Int = 0
     @Published var lastError: String?
@@ -110,6 +112,17 @@ final class SpoofSession: ObservableObject {
         if case .active = status { return true }
         if case .reconnecting = status { return true }
         return false
+    }
+
+    func requestMapFocus(_ coordinate: CLLocationCoordinate2D) {
+        guard CLLocationCoordinate2DIsValid(coordinate) else { return }
+        mapFocusCoordinate = coordinate
+        mapFocusRequestID = UUID()
+    }
+
+    func clearMapFocusRequest() {
+        mapFocusCoordinate = nil
+        mapFocusRequestID = nil
     }
 
     func teleport(to coordinate: CLLocationCoordinate2D, pairing: PairingStore) {
