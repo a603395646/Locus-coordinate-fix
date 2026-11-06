@@ -112,7 +112,7 @@ struct SettingsView: View {
 
                 Section {
                     NavigationLink {
-                        WLocProfilesView()
+                        WLocProfilesView(onRestore: { dismiss() })
                             .environmentObject(session)
                     } label: {
                         Label("Location profiles", systemImage: "mappin.and.ellipse")
