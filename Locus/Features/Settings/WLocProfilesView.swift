@@ -3,8 +3,9 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct WLocProfilesView: View {
+    let onRestore: () -> Void
+
     @EnvironmentObject private var session: SpoofSession
-    @Environment(\.dismiss) private var dismiss
 
     @State private var profiles = WLocProfile.load()
     @State private var profileName = ""
@@ -52,8 +53,10 @@ struct WLocProfilesView: View {
                                 .foregroundStyle(.secondary)
                             HStack {
                                 Button {
-                                    session.pin = profile.mapCoordinate(for: MapDatumMode.current)
-                                    dismiss()
+                                    let coordinate = profile.mapCoordinate(for: MapDatumMode.current)
+                                    session.pin = coordinate
+                                    session.requestMapFocus(coordinate)
+                                    onRestore()
                                 } label: {
                                     Label("Show on map", systemImage: "map")
                                 }
