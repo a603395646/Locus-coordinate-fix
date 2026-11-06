@@ -130,6 +130,17 @@ struct MapHomeView: View {
         .onChange(of: session.pin?.latitude) { _, newValue in
             if newValue == nil { pinSelected = false }
         }
+        .onChange(of: session.mapFocusRequestID) { _, requestID in
+            guard requestID != nil, let coordinate = session.mapFocusCoordinate else { return }
+            withAnimation(.easeInOut(duration: 0.35)) {
+                position = .region(MKCoordinateRegion(
+                    center: coordinate,
+                    latitudinalMeters: 1_200,
+                    longitudinalMeters: 1_200
+                ))
+            }
+            session.clearMapFocusRequest()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .locusImportGPX)) { note in
             guard let url = note.object as? URL else { return }
             importGPX(url)
