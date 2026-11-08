@@ -36,7 +36,7 @@ struct WLocProfilesView: View {
                 Text("Profiles are stored locally on this iPhone. Saving a pin records its current map coordinate reference; it does not change the device location by itself.")
             }
 
-            Section("Set from map link") {
+            Section {
                 TextField("Paste Apple Maps / Amap / Google Maps link", text: $mapLinkText, axis: .vertical)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
@@ -59,6 +59,8 @@ struct WLocProfilesView: View {
                     }
                     .disabled(mapLinkText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isParsingMapLink)
                 }
+            } header: {
+                Text("Set from map link")
             } footer: {
                 Text("Paste a shared map link or coordinates. Supported short links are expanded on this iPhone; the resolved coordinate is converted and applied through Locus.")
             }
