@@ -112,7 +112,7 @@ struct LocusApp: App {
             }
 
         default:
-            session.lastError = "Unknown Locus URL action: \(action)"
+            return
         }
     }
 }
