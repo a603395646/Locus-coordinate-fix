@@ -157,7 +157,7 @@ struct MapDatumChecks {
           "latitude": 29.56301,
           "longitude": 106.55156,
           "coordinateReference": "GCJ-02",
-          "createdAt": "2026-11-06T05:00:00Z"
+          "createdAt": 815000000
         }]
         """
         let legacyProfiles = try! JSONDecoder().decode([WLocProfile].self, from: Data(legacyProfileJSON.utf8))
