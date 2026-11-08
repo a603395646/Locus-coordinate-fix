@@ -112,7 +112,7 @@ struct WLocProfilesView: View {
                 Button {
                     showImporter = true
                 } label: {
-                    Label("Import profile JSON", systemImage: "square.and.arrow.down")
+                    Label("Import Locus / WLOC JSON", systemImage: "square.and.arrow.down")
                 }
 
                 if !profiles.isEmpty {
@@ -135,7 +135,7 @@ struct WLocProfilesView: View {
 
             Section("Compatibility") {
                 LabeledContent("Storage", value: "On this device")
-                LabeledContent("Format", value: "Locus JSON v1")
+                LabeledContent("Format", value: "Locus v1 / WLOC settings")
                 LabeledContent("Network access", value: "Not required for profile storage")
                 Text("Accuracy is retained as WLOC metadata; the current DVT location engine applies coordinates but does not set horizontal accuracy. A random radius is applied once when a profile is activated to avoid continuous location jitter.")
                     .font(.footnote)
