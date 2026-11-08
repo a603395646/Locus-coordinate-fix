@@ -6,8 +6,10 @@ struct WLocProfilesView: View {
     let onRestore: () -> Void
 
     @EnvironmentObject private var session: SpoofSession
+    @EnvironmentObject private var pairing: PairingStore
 
     @State private var profiles = WLocProfile.load()
+    @State private var actionError: String?
     @State private var profileName = ""
     @State private var showImporter = false
     @State private var importMessage: String?
@@ -51,14 +53,26 @@ struct WLocProfilesView: View {
                             Text(String(format: "%.6f, %.6f", profile.latitude, profile.longitude))
                                 .font(.system(.caption, design: .monospaced))
                                 .foregroundStyle(.secondary)
+                            HStack(spacing: 12) {
+                                Text("Accuracy metadata: \(Int(profile.accuracyMeters)) m")
+                                if profile.randomRadiusMeters > 0 {
+                                    Text("Radius: \(Int(profile.randomRadiusMeters)) m")
+                                }
+                            }
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
                             HStack {
                                 Button {
-                                    let coordinate = profile.mapCoordinate(for: MapDatumMode.current)
-                                    session.pin = coordinate
-                                    session.requestMapFocus(coordinate)
-                                    onRestore()
+                                    apply(profile)
                                 } label: {
-                                    Label("Show on map", systemImage: "map")
+                                    Label("Apply", systemImage: "location.fill")
+                                }
+                                .buttonStyle(.borderless)
+
+                                Button {
+                                    showOnMap(profile)
+                                } label: {
+                                    Label("Map", systemImage: "map")
                                 }
                                 .buttonStyle(.borderless)
                                 Spacer()
@@ -75,6 +89,22 @@ struct WLocProfilesView: View {
                         .padding(.vertical, 4)
                     }
                     .onDelete(perform: delete(at:))
+                }
+            }
+
+
+            Section("Device location") {
+                LabeledContent("Status", value: session.isSpoofing ? "Active" : "Not active")
+                if session.isSpoofing {
+                    Button(role: .destructive) {
+                        restoreRealLocation()
+                    } label: {
+                        Label("Restore real location", systemImage: "location.slash")
+                    }
+                } else {
+                    Text("Apply a saved profile to start location simulation. You can restore the real location here.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -106,8 +136,11 @@ struct WLocProfilesView: View {
             Section("Compatibility") {
                 LabeledContent("Storage", value: "On this device")
                 LabeledContent("Format", value: "Locus JSON v1")
-                LabeledContent("Network access", value: "Not required")
-                Text("This profile format is for saving and transferring coordinates within Locus. It does not configure a VPN, install certificates, or modify network responses.")
+                LabeledContent("Network access", value: "Not required for profile storage")
+                Text("Accuracy is retained as WLOC metadata; the current DVT location engine applies coordinates but does not set horizontal accuracy. A random radius is applied once when a profile is activated to avoid continuous location jitter.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Text("Profiles are stored locally. They do not configure a VPN, install certificates, or modify network responses.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -121,6 +154,62 @@ struct WLocProfilesView: View {
         ) { result in
             importProfiles(result)
         }
+        .alert("Locus", isPresented: Binding(
+            get: { actionError != nil },
+            set: { if !$0 { actionError = nil } }
+        )) {
+            Button("OK", role: .cancel) { actionError = nil }
+        } message: {
+            Text(actionError ?? "")
+        }
+    }
+
+    private func showOnMap(_ profile: WLocProfile) {
+        let coordinate = profile.mapCoordinate(for: MapDatumMode.current)
+        session.pin = coordinate
+        session.requestMapFocus(coordinate)
+        onRestore()
+    }
+
+    private func apply(_ profile: WLocProfile) {
+        guard pairing.hasPairingFile else {
+            actionError = "Import an RPPairing file in Settings first."
+            return
+        }
+
+        let base = profile.mapCoordinate(for: MapDatumMode.current)
+        let coordinate = randomizedCoordinate(base, radiusMeters: profile.randomRadiusMeters)
+        session.teleport(to: coordinate, pairing: pairing)
+        guard session.isSpoofing else {
+            actionError = session.lastError ?? "Could not apply this location. Check the device connection."
+            return
+        }
+        session.requestMapFocus(coordinate)
+        onRestore()
+    }
+
+    private func restoreRealLocation() {
+        session.stop(pairing: pairing)
+        guard case .idle = session.status else {
+            actionError = session.lastError ?? "Could not restore the real location."
+            return
+        }
+        onRestore()
+    }
+
+    private func randomizedCoordinate(
+        _ coordinate: CLLocationCoordinate2D,
+        radiusMeters: Double
+    ) -> CLLocationCoordinate2D {
+        guard radiusMeters > 0 else { return coordinate }
+        let distance = sqrt(Double.random(in: 0...1)) * radiusMeters
+        let angle = Double.random(in: 0..<(2 * Double.pi))
+        let northMeters = cos(angle) * distance
+        let eastMeters = sin(angle) * distance
+        let latitude = coordinate.latitude + northMeters / 111_320
+        let longitudeScale = max(0.01, abs(cos(coordinate.latitude * .pi / 180)))
+        let longitude = coordinate.longitude + eastMeters / (111_320 * longitudeScale)
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 
     private func saveCurrentPin() {
@@ -163,7 +252,7 @@ struct WLocProfilesView: View {
             let additions = imported.filter { !existingIDs.contains($0.id) }
             profiles.append(contentsOf: additions)
             WLocProfile.save(profiles)
-            importMessage = "Imported \(additions.count) profile(s)."
+            importMessage = "Imported \(additions.count) profile(s). WLOC accuracy is retained as metadata; Locus applies the saved coordinate."
         } catch {
             importMessage = "Import failed: \(error.localizedDescription)"
         }
