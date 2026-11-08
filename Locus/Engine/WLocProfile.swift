@@ -10,6 +10,26 @@ struct WLocProfile: Identifiable, Codable, Equatable {
     var longitude: Double
     var coordinateReference: String
     var createdAt: Date
+    var accuracyMeters: Double
+    var randomRadiusMeters: Double
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, latitude, longitude, coordinateReference, createdAt
+        case accuracyMeters, randomRadiusMeters
+    }
+
+    /// Backward-compatible decoder for profiles created before WLOC metadata was added.
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        name = try values.decode(String.self, forKey: .name)
+        latitude = try values.decode(Double.self, forKey: .latitude)
+        longitude = try values.decode(Double.self, forKey: .longitude)
+        coordinateReference = try values.decode(String.self, forKey: .coordinateReference)
+        createdAt = try values.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        accuracyMeters = try values.decodeIfPresent(Double.self, forKey: .accuracyMeters) ?? 25
+        randomRadiusMeters = try values.decodeIfPresent(Double.self, forKey: .randomRadiusMeters) ?? 0
+    }
 
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
@@ -35,7 +55,9 @@ struct WLocProfile: Identifiable, Codable, Equatable {
         name: String,
         coordinate: CLLocationCoordinate2D,
         coordinateReference: String,
-        createdAt: Date = Date()
+        createdAt: Date = Date(),
+        accuracyMeters: Double = 25,
+        randomRadiusMeters: Double = 0
     ) {
         self.id = id
         self.name = name
@@ -43,6 +65,8 @@ struct WLocProfile: Identifiable, Codable, Equatable {
         self.longitude = coordinate.longitude
         self.coordinateReference = coordinateReference
         self.createdAt = createdAt
+        self.accuracyMeters = accuracyMeters
+        self.randomRadiusMeters = randomRadiusMeters
     }
 
     var isValid: Bool {
@@ -53,6 +77,10 @@ struct WLocProfile: Identifiable, Codable, Equatable {
             && latitude.isFinite
             && longitude.isFinite
             && supportedReference
+            && accuracyMeters.isFinite
+            && (1...10_000).contains(accuracyMeters)
+            && randomRadiusMeters.isFinite
+            && (0...10_000).contains(randomRadiusMeters)
             && !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
@@ -92,15 +120,50 @@ struct WLocProfile: Identifiable, Codable, Equatable {
     static func importJSON(_ data: Data) throws -> [WLocProfile] {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let payload = try decoder.decode(WLocProfileExport.self, from: data)
-        guard payload.schema == exportSchema, payload.version == 1 else {
+
+        if let payload = try? decoder.decode(WLocProfileExport.self, from: data) {
+            guard payload.schema == exportSchema, payload.version == 1 else {
+                throw WLocProfileError.unsupportedFormat
+            }
+            guard payload.profiles.count <= 500,
+                  payload.profiles.allSatisfy(\.isValid) else {
+                throw WLocProfileError.invalidProfiles
+            }
+            return payload.profiles
+        }
+
+        // WLOC's exported persistent setting is a single JSON object containing
+        // longitude, latitude, accuracy and optional randomRadius.
+        // WLOC's picker normalizes map links to WGS-84 before saving this object.
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw WLocProfileError.unsupportedFormat
         }
-        guard payload.profiles.count <= 500,
-              payload.profiles.allSatisfy(\.isValid) else {
+        let settings = root["wloc_settings"] as? [String: Any] ?? root
+        func number(_ key: String) -> Double? {
+            if let value = settings[key] as? NSNumber { return value.doubleValue }
+            if let value = settings[key] as? String {
+                return Double(value.replacingOccurrences(of: ",", with: "."))
+            }
+            return nil
+        }
+        guard let latitude = number("latitude"),
+              let longitude = number("longitude") else {
+            throw WLocProfileError.unsupportedFormat
+        }
+
+        let profile = WLocProfile(
+            name: (settings["name"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+                ? (settings["name"] as? String ?? "Imported WLOC")
+                : "Imported WLOC",
+            coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
+            coordinateReference: "WGS-84",
+            accuracyMeters: number("accuracy") ?? 25,
+            randomRadiusMeters: number("randomRadius") ?? 0
+        )
+        guard profile.isValid else {
             throw WLocProfileError.invalidProfiles
         }
-        return payload.profiles
+        return [profile]
     }
 }
 
