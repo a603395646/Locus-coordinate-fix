@@ -1,3 +1,4 @@
+import CoreLocation
 import SwiftUI
 
 @main
@@ -39,11 +40,79 @@ struct LocusApp: App {
     }
 
     private func handleIncoming(_ url: URL) {
+        if url.scheme?.lowercased() == "locusfix" {
+            handleLocusURL(url)
+            return
+        }
+
         let ext = url.pathExtension.lowercased()
         if ["plist", "mobiledevicepairing", "mobiledevicepair"].contains(ext) {
             try? pairing.importPairing(from: url)
         } else if ext == "gpx" {
             NotificationCenter.default.post(name: .locusImportGPX, object: url)
+        }
+    }
+
+    /// URL actions let Apple Shortcuts hand a shared map link directly to Locus.
+    /// Examples: locusfix://share?url=<encoded-link> and locusfix://restore
+    private func handleLocusURL(_ url: URL) {
+        guard let action = url.host?.lowercased() else { return }
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        func value(_ key: String) -> String? {
+            items.first(where: { $0.name.caseInsensitiveCompare(key) == .orderedSame })?.value
+        }
+
+        switch action {
+        case "share":
+            guard let sharedText = value("url") ?? value("text"),
+                  !sharedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                session.lastError = "The shared map link is empty."
+                return
+            }
+            Task { @MainActor in
+                do {
+                    let profile = try await WLocMapLinkParser.parse(sharedText)
+                    let coordinate = profile.mapCoordinate(for: MapDatumMode.current)
+                    session.teleport(to: coordinate, pairing: pairing)
+                    if session.isSpoofing {
+                        session.requestMapFocus(coordinate)
+                    }
+                } catch {
+                    session.lastError = error.localizedDescription
+                }
+            }
+
+        case "set":
+            guard let latitude = value("lat").flatMap(Double.init),
+                  let longitude = value("lon").flatMap(Double.init) else {
+                session.lastError = "The Locus URL needs valid lat and lon values."
+                return
+            }
+            let input = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+            guard CLLocationCoordinate2DIsValid(input) else {
+                session.lastError = "The Locus URL contains an invalid coordinate."
+                return
+            }
+            let coordinate: CLLocationCoordinate2D
+            if value("datum")?.lowercased() == "gcj02" {
+                coordinate = MapDatumMode.current == .automaticChina
+                    ? input
+                    : MapDatumMode.automaticChina.deviceCoordinate(fromMapCoordinate: input)
+            } else {
+                coordinate = MapDatumMode.current.mapCoordinate(fromWGS84: input)
+            }
+            session.teleport(to: coordinate, pairing: pairing)
+            if session.isSpoofing {
+                session.requestMapFocus(coordinate)
+            }
+
+        case "restore":
+            if session.isSpoofing {
+                session.stop(pairing: pairing)
+            }
+
+        default:
+            session.lastError = "Unknown Locus URL action: \(action)"
         }
     }
 }
