@@ -165,6 +165,15 @@ struct WLocProfilesView: View {
                 }
             }
 
+            Section("Shortcuts") {
+                Text("Use locusfix://share?url=<URL-encoded map link> to parse and apply a shared map location. Use locusfix://restore to return to the real location.")
+                    .font(.footnote)
+                    .textSelection(.enabled)
+                Text("A Share Sheet shortcut can URL-encode its input, then open the generated Locus URL.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Compatibility") {
                 LabeledContent("Storage", value: "On this device")
                 LabeledContent("Format", value: "Locus v1 / WLOC settings")
