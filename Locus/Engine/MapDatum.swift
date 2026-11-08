@@ -46,13 +46,14 @@ enum MapDatumMode: String, CaseIterable, Identifiable {
 enum ChinaCoordinateTransform {
     // GCJ-02 is used for mainland-China map coordinates. The broad coverage box also
     // contains nearby regions where Apple Maps coordinates are WGS-84, so exclude them.
-    static func isWithinMainlandCoverage(_ coordinate: CLLocationCoordinate2D) -> Bool {
-        guard CLLocationCoordinate2DIsValid(coordinate),
-              (72.004...137.8347).contains(coordinate.longitude),
-              (0.8293...55.8271).contains(coordinate.latitude) else {
-            return false
-        }
+    static func isWithinGCJBounds(_ coordinate: CLLocationCoordinate2D) -> Bool {
+        CLLocationCoordinate2DIsValid(coordinate)
+            && (72.004...137.8347).contains(coordinate.longitude)
+            && (0.8293...55.8271).contains(coordinate.latitude)
+    }
 
+    static func isWithinMainlandCoverage(_ coordinate: CLLocationCoordinate2D) -> Bool {
+        guard isWithinGCJBounds(coordinate) else { return false }
         return !isInHongKong(coordinate)
             && !isInMacau(coordinate)
             && !isInTaiwan(coordinate)
@@ -120,7 +121,45 @@ enum ChinaCoordinateTransform {
 
     static func wgs84ToGCJ02(_ coordinate: CLLocationCoordinate2D) -> CLLocationCoordinate2D {
         guard isWithinMainlandCoverage(coordinate) else { return coordinate }
+        return wgs84ToGCJ02Unchecked(coordinate)
+    }
 
+    /// GCJ-02 can also be used by some map providers in Hong Kong, Macau and Taiwan.
+    /// This source-aware inverse deliberately skips the mainland-only region guard.
+    static func gcj02ToWGS84ForMapSource(_ coordinate: CLLocationCoordinate2D) -> CLLocationCoordinate2D {
+        guard isWithinGCJBounds(coordinate) else { return coordinate }
+        var estimate = coordinate
+        for _ in 0..<10 {
+            let converted = wgs84ToGCJ02Unchecked(estimate)
+            let latitudeError = converted.latitude - coordinate.latitude
+            let longitudeError = converted.longitude - coordinate.longitude
+            estimate.latitude -= latitudeError
+            estimate.longitude -= longitudeError
+            if max(abs(latitudeError), abs(longitudeError)) < 1e-9 {
+                break
+            }
+        }
+        return estimate
+    }
+
+    /// Iterative inverse of WGS-84 → GCJ-02 for mainland Apple Maps coordinates.
+    static func gcj02ToWGS84(_ coordinate: CLLocationCoordinate2D) -> CLLocationCoordinate2D {
+        guard isWithinMainlandCoverage(coordinate) else { return coordinate }
+        var estimate = coordinate
+        for _ in 0..<10 {
+            let converted = wgs84ToGCJ02(estimate)
+            let latitudeError = converted.latitude - coordinate.latitude
+            let longitudeError = converted.longitude - coordinate.longitude
+            estimate.latitude -= latitudeError
+            estimate.longitude -= longitudeError
+            if max(abs(latitudeError), abs(longitudeError)) < 1e-9 {
+                break
+            }
+        }
+        return estimate
+    }
+
+    private static func wgs84ToGCJ02Unchecked(_ coordinate: CLLocationCoordinate2D) -> CLLocationCoordinate2D {
         let x = coordinate.longitude - 105.0
         let y = coordinate.latitude - 35.0
         let latitudeOffset = transformLatitude(x: x, y: y)
@@ -140,26 +179,6 @@ enum ChinaCoordinateTransform {
             latitude: coordinate.latitude + latitudeDelta,
             longitude: coordinate.longitude + longitudeDelta
         )
-    }
-
-    /// Iterative inverse of WGS-84 → GCJ-02. This avoids applying a fixed offset,
-    /// which is inaccurate because the GCJ-02 displacement varies by location.
-    static func gcj02ToWGS84(_ coordinate: CLLocationCoordinate2D) -> CLLocationCoordinate2D {
-        guard isWithinMainlandCoverage(coordinate) else { return coordinate }
-
-        var estimate = coordinate
-        for _ in 0..<10 {
-            let converted = wgs84ToGCJ02(estimate)
-            let latitudeError = converted.latitude - coordinate.latitude
-            let longitudeError = converted.longitude - coordinate.longitude
-            estimate.latitude -= latitudeError
-            estimate.longitude -= longitudeError
-
-            if max(abs(latitudeError), abs(longitudeError)) < 1e-9 {
-                break
-            }
-        }
-        return estimate
     }
 
     private static func transformLatitude(x: Double, y: Double) -> Double {
