@@ -1,6 +1,7 @@
 import CoreLocation
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit
 
 struct WLocProfilesView: View {
     let onRestore: () -> Void
@@ -11,6 +12,8 @@ struct WLocProfilesView: View {
     @State private var profiles = WLocProfile.load()
     @State private var actionError: String?
     @State private var profileName = ""
+    @State private var mapLinkText = ""
+    @State private var isParsingMapLink = false
     @State private var showImporter = false
     @State private var importMessage: String?
 
@@ -31,6 +34,33 @@ struct WLocProfilesView: View {
                 .disabled(session.pin == nil || profileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             } footer: {
                 Text("Profiles are stored locally on this iPhone. Saving a pin records its current map coordinate reference; it does not change the device location by itself.")
+            }
+
+            Section("Set from map link") {
+                TextField("Paste Apple Maps / Amap / Google Maps link", text: $mapLinkText, axis: .vertical)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .lineLimit(2...4)
+                HStack {
+                    Button {
+                        pasteMapLink()
+                    } label: {
+                        Label("Paste", systemImage: "doc.on.clipboard")
+                    }
+                    Spacer()
+                    Button {
+                        Task { await parseAndApplyMapLink() }
+                    } label: {
+                        if isParsingMapLink {
+                            ProgressView()
+                        } else {
+                            Label("Parse and apply", systemImage: "location.fill")
+                        }
+                    }
+                    .disabled(mapLinkText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isParsingMapLink)
+                }
+            } footer: {
+                Text("Paste a shared map link or coordinates. Supported short links are expanded on this iPhone; the resolved coordinate is converted and applied through Locus.")
             }
 
             Section("Saved profiles") {
@@ -161,6 +191,48 @@ struct WLocProfilesView: View {
             Button("OK", role: .cancel) { actionError = nil }
         } message: {
             Text(actionError ?? "")
+        }
+    }
+
+    private func pasteMapLink() {
+        guard let value = UIPasteboard.general.string,
+              !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            actionError = "The clipboard does not contain a map link or coordinate."
+            return
+        }
+        mapLinkText = value
+    }
+
+    @MainActor
+    private func parseAndApplyMapLink() async {
+        guard pairing.hasPairingFile else {
+            actionError = "Import an RPPairing file in Settings first."
+            return
+        }
+        isParsingMapLink = true
+        defer { isParsingMapLink = false }
+
+        do {
+            let profile = try await WLocMapLinkParser.parse(mapLinkText)
+            if !profiles.contains(where: {
+                abs($0.latitude - profile.latitude) < 0.000001
+                    && abs($0.longitude - profile.longitude) < 0.000001
+            }) {
+                profiles.insert(profile, at: 0)
+                WLocProfile.save(profiles)
+            }
+
+            let base = profile.mapCoordinate(for: MapDatumMode.current)
+            let coordinate = randomizedCoordinate(base, radiusMeters: profile.randomRadiusMeters)
+            session.teleport(to: coordinate, pairing: pairing)
+            guard session.isSpoofing else {
+                actionError = session.lastError ?? "Could not apply this location. Check the device connection."
+                return
+            }
+            session.requestMapFocus(coordinate)
+            onRestore()
+        } catch {
+            actionError = error.localizedDescription
         }
     }
 
