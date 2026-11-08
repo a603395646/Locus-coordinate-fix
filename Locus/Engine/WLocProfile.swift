@@ -138,7 +138,16 @@ struct WLocProfile: Identifiable, Codable, Equatable {
         guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw WLocProfileError.unsupportedFormat
         }
-        let settings = root["wloc_settings"] as? [String: Any] ?? root
+        let settings: [String: Any]
+        if let object = root["wloc_settings"] as? [String: Any] {
+            settings = object
+        } else if let encoded = root["wloc_settings"] as? String,
+                  let nestedData = encoded.data(using: .utf8),
+                  let nestedObject = try? JSONSerialization.jsonObject(with: nestedData) as? [String: Any] {
+            settings = nestedObject
+        } else {
+            settings = root
+        }
         func number(_ key: String) -> Double? {
             if let value = settings[key] as? NSNumber { return value.doubleValue }
             if let value = settings[key] as? String {
@@ -151,10 +160,10 @@ struct WLocProfile: Identifiable, Codable, Equatable {
             throw WLocProfileError.unsupportedFormat
         }
 
+        let importedName = (settings["name"] as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let profile = WLocProfile(
-            name: (settings["name"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
-                ? (settings["name"] as? String ?? "Imported WLOC")
-                : "Imported WLOC",
+            name: importedName.isEmpty ? "Imported WLOC" : importedName,
             coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
             coordinateReference: "WGS-84",
             accuracyMeters: number("accuracy") ?? 25,
