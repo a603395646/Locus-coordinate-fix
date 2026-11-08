@@ -139,6 +139,16 @@ struct MapDatumChecks {
         assert(importedWLoc[0].accuracyMeters == 25)
         assert(importedWLoc[0].randomRadiusMeters == 40)
 
+        let nestedWLocJSON = """
+        {
+          "wloc_settings": "{\\"longitude\\":106.55156,\\"latitude\\":29.56301,\\"accuracy\\":35,\\"randomRadius\\":0}"
+        }
+        """
+        let nestedWLoc = try! WLocProfile.importJSON(Data(nestedWLocJSON.utf8))
+        assert(nestedWLoc.count == 1)
+        assert(nestedWLoc[0].accuracyMeters == 35)
+        assert(nestedWLoc[0].randomRadiusMeters == 0)
+
         // Older profile exports without WLOC metadata remain readable.
         let legacyProfileJSON = """
         [{
