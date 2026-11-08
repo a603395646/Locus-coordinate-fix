@@ -176,6 +176,200 @@ struct WLocProfile: Identifiable, Codable, Equatable {
     }
 }
 
+/// Native parser for shared map links. It expands supported short links on-device,
+/// then stores all imported coordinates as WGS-84 for consistent Locus handling.
+enum WLocMapLinkParser {
+    private enum Source {
+        case apple
+        case amap
+        case google
+    }
+
+    static func parse(_ raw: String) async throws -> WLocProfile {
+        if let direct = parseDirect(raw) { return direct }
+        guard let url = extractURL(from: raw),
+              let host = url.host?.lowercased(),
+              source(for: host) != nil else {
+            throw WLocProfileError.unsupportedMapLink
+        }
+
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 8
+        request.setValue(
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15",
+            forHTTPHeaderField: "User-Agent"
+        )
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let http = response as? HTTPURLResponse,
+               !(200..<400).contains(http.statusCode) {
+                throw WLocProfileError.mapLinkFetchFailed
+            }
+            if let finalURL = response.url,
+               let profile = parseDirect(finalURL.absoluteString) {
+                return profile
+            }
+            if let body = String(data: data, encoding: .utf8),
+               let profile = parseDirect(body) {
+                return profile
+            }
+        } catch let error as WLocProfileError {
+            throw error
+        } catch {
+            throw WLocProfileError.mapLinkFetchFailed
+        }
+
+        throw WLocProfileError.unsupportedMapLink
+    }
+
+    /// Parses direct URLs and plain coordinate text without network access.
+    static func parseDirect(_ raw: String) -> WLocProfile? {
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let coordinate = parseBareCoordinate(text) {
+            return WLocProfile(
+                name: "Shared location",
+                coordinate: coordinate,
+                coordinateReference: "WGS-84"
+            )
+        }
+
+        guard let url = extractURL(from: text),
+              let host = url.host?.lowercased(),
+              let source = source(for: host),
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+
+        let items = components.queryItems ?? []
+        func value(_ key: String) -> String? {
+            items.first(where: { $0.name.caseInsensitiveCompare(key) == .orderedSame })?.value
+        }
+
+        var coordinate: CLLocationCoordinate2D?
+        switch source {
+        case .apple:
+            coordinate = ["coordinate", "ll", "q"]
+                .compactMap { value($0) }
+                .compactMap { parsePair($0, longitudeFirst: false) }
+                .first
+        case .amap:
+            coordinate = ["position", "lnglat", "to"]
+                .compactMap { value($0) }
+                .compactMap { parsePair($0, longitudeFirst: true) }
+                .first
+            if coordinate == nil, let q = value("q") {
+                coordinate = parsePair(q, longitudeFirst: false)
+            }
+        case .google:
+            if let q = value("q") ?? value("query") {
+                coordinate = parsePair(q, longitudeFirst: false)
+            }
+            if coordinate == nil {
+                coordinate = parseGooglePath(components.path)
+            }
+        }
+
+        guard let rawCoordinate = coordinate,
+              CLLocationCoordinate2DIsValid(rawCoordinate) else {
+            return nil
+        }
+
+        let wgs84: CLLocationCoordinate2D
+        switch source {
+        case .apple, .google:
+            // Apple/Google map links use GCJ-02 in mainland China, WGS-84 in HK/Macau/Taiwan.
+            wgs84 = ChinaCoordinateTransform.isWithinMainlandCoverage(rawCoordinate)
+                ? ChinaCoordinateTransform.gcj02ToWGS84(rawCoordinate)
+                : rawCoordinate
+        case .amap:
+            // Amap's map coordinate system remains GCJ-02 in the nearby special regions.
+            wgs84 = ChinaCoordinateTransform.isWithinGCJBounds(rawCoordinate)
+                ? ChinaCoordinateTransform.gcj02ToWGS84ForMapSource(rawCoordinate)
+                : rawCoordinate
+        }
+
+        let suppliedName = value("name")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let qName = value("q").flatMap { parsePair($0, longitudeFirst: false) == nil ? $0 : nil } ?? ""
+        let name = suppliedName.isEmpty ? (qName.isEmpty ? "Shared location" : qName) : suppliedName
+        let profile = WLocProfile(
+            name: name,
+            coordinate: wgs84,
+            coordinateReference: "WGS-84"
+        )
+        return profile.isValid ? profile : nil
+    }
+
+    private static func source(for host: String) -> Source? {
+        if host == "maps.apple.com" || host.hasSuffix(".maps.apple.com") {
+            return .apple
+        }
+        if host == "amap.com" || host.hasSuffix(".amap.com") {
+            return .amap
+        }
+        if host == "goo.gl" || host == "maps.app.goo.gl"
+            || host == "google.com" || host.hasSuffix(".google.com") {
+            return .google
+        }
+        return nil
+    }
+
+    private static func extractURL(from text: String) -> URL? {
+        let pattern = #"https?://[^\s'"<>]+"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              let range = Range(match.range, in: text) else {
+            return nil
+        }
+        var candidate = String(text[range])
+        while let last = candidate.last, "，。；）)]}>,.".contains(last) {
+            candidate.removeLast()
+        }
+        return URL(string: candidate)
+    }
+
+    private static func parseBareCoordinate(_ text: String) -> CLLocationCoordinate2D? {
+        let pieces = text.replacingOccurrences(of: "，", with: ",")
+            .split(separator: ",", omittingEmptySubsequences: true)
+        guard pieces.count == 2,
+              let latitude = Double(pieces[0].trimmingCharacters(in: .whitespaces)),
+              let longitude = Double(pieces[1].trimmingCharacters(in: .whitespaces)) else {
+            return nil
+        }
+        let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        return CLLocationCoordinate2DIsValid(coordinate) ? coordinate : nil
+    }
+
+    private static func parsePair(
+        _ value: String,
+        longitudeFirst: Bool
+    ) -> CLLocationCoordinate2D? {
+        let pieces = value.split(separator: ",", omittingEmptySubsequences: true)
+        guard pieces.count >= 2,
+              let first = Double(pieces[0].trimmingCharacters(in: .whitespaces)),
+              let second = Double(pieces[1].trimmingCharacters(in: .whitespaces)) else {
+            return nil
+        }
+        let coordinate = longitudeFirst
+            ? CLLocationCoordinate2D(latitude: second, longitude: first)
+            : CLLocationCoordinate2D(latitude: first, longitude: second)
+        return CLLocationCoordinate2DIsValid(coordinate) ? coordinate : nil
+    }
+
+    private static func parseGooglePath(_ path: String) -> CLLocationCoordinate2D? {
+        let pattern = #"/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: path, range: NSRange(path.startIndex..., in: path)),
+              let latitudeRange = Range(match.range(at: 1), in: path),
+              let longitudeRange = Range(match.range(at: 2), in: path),
+              let latitude = Double(path[latitudeRange]),
+              let longitude = Double(path[longitudeRange]) else {
+            return nil
+        }
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+}
+
 private struct WLocProfileExport: Codable {
     let schema: String
     let version: Int
@@ -186,6 +380,8 @@ private struct WLocProfileExport: Codable {
 enum WLocProfileError: LocalizedError {
     case unsupportedFormat
     case invalidProfiles
+    case unsupportedMapLink
+    case mapLinkFetchFailed
 
     var errorDescription: String? {
         switch self {
@@ -193,6 +389,10 @@ enum WLocProfileError: LocalizedError {
             return "This is not a supported Locus profile export."
         case .invalidProfiles:
             return "The file contains invalid coordinates or too many profiles."
+        case .unsupportedMapLink:
+            return "This map link is not supported. Use an Apple Maps, Amap or Google Maps share link."
+        case .mapLinkFetchFailed:
+            return "Could not expand this map share link. Check the network and try again."
         }
     }
 }
