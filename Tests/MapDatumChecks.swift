@@ -122,6 +122,39 @@ struct MapDatumChecks {
         )
         assert(!invalidGCJProfile.isValid)
 
+        // Import a WLOC persistent-settings object without needing proxy storage access.
+        let wlocSettingsJSON = """
+        {
+          "longitude": 106.55156,
+          "latitude": 29.56301,
+          "accuracy": 25,
+          "randomRadius": 40
+        }
+        """
+        let importedWLoc = try! WLocProfile.importJSON(Data(wlocSettingsJSON.utf8))
+        assert(importedWLoc.count == 1)
+        assert(importedWLoc[0].coordinateReference == "WGS-84")
+        assert(abs(importedWLoc[0].latitude - 29.56301) < 1e-10)
+        assert(abs(importedWLoc[0].longitude - 106.55156) < 1e-10)
+        assert(importedWLoc[0].accuracyMeters == 25)
+        assert(importedWLoc[0].randomRadiusMeters == 40)
+
+        // Older profile exports without WLOC metadata remain readable.
+        let legacyProfileJSON = """
+        [{
+          "id": "00000000-0000-0000-0000-000000000001",
+          "name": "Legacy profile",
+          "latitude": 29.56301,
+          "longitude": 106.55156,
+          "coordinateReference": "GCJ-02",
+          "createdAt": "2026-11-06T05:00:00Z"
+        }]
+        """
+        let legacyProfiles = try! JSONDecoder().decode([WLocProfile].self, from: Data(legacyProfileJSON.utf8))
+        assert(legacyProfiles.count == 1)
+        assert(legacyProfiles[0].accuracyMeters == 25)
+        assert(legacyProfiles[0].randomRadiusMeters == 0)
+
         print("Map datum and WLOC profile checks passed")
     }
 }
