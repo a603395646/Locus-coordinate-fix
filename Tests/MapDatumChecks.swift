@@ -149,6 +149,38 @@ struct MapDatumChecks {
         assert(nestedWLoc[0].accuracyMeters == 35)
         assert(nestedWLoc[0].randomRadiusMeters == 0)
 
+        // Native map-share parsing normalizes supported providers to WGS-84.
+        let appleMapProfile = WLocMapLinkParser.parseDirect(
+            "https://maps.apple.com/?ll=29.560161356,106.555277721&q=Chongqing"
+        )!
+        assert(abs(appleMapProfile.latitude - 29.56301) < 0.000001)
+        assert(abs(appleMapProfile.longitude - 106.55156) < 0.000001)
+        assert(appleMapProfile.name == "Chongqing")
+
+        let amapProfile = WLocMapLinkParser.parseDirect(
+            "https://uri.amap.com/marker?position=106.555277721,29.560161356&name=Chongqing"
+        )!
+        assert(abs(amapProfile.latitude - 29.56301) < 0.000001)
+        assert(abs(amapProfile.longitude - 106.55156) < 0.000001)
+
+        let appleHongKong = WLocMapLinkParser.parseDirect(
+            "https://maps.apple.com/?ll=22.284774,114.159437&q=Hong%20Kong"
+        )!
+        assert(abs(appleHongKong.latitude - 22.284774) < 0.0000001)
+        assert(abs(appleHongKong.longitude - 114.159437) < 0.0000001)
+
+        let amapHongKong = WLocMapLinkParser.parseDirect(
+            "https://uri.amap.com/marker?position=114.159437,22.284774&name=Hong%20Kong"
+        )!
+        assert(abs(amapHongKong.latitude - 22.284774) > 0.000001)
+        assert(abs(amapHongKong.longitude - 114.159437) > 0.000001)
+
+        let googleMapProfile = WLocMapLinkParser.parseDirect(
+            "https://www.google.com/maps/@29.560161356,106.555277721,15z"
+        )!
+        assert(abs(googleMapProfile.latitude - 29.56301) < 0.000001)
+        assert(abs(googleMapProfile.longitude - 106.55156) < 0.000001)
+
         // Older profile exports without WLOC metadata remain readable.
         let legacyProfileJSON = """
         [{
