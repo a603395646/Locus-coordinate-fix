@@ -205,7 +205,7 @@ struct PairOnDeviceView: View {
                 host.acknowledgeFailure()
                 host.start(pairingStore: pairing)
             } label: {
-                Text(host.phase == .idle ? "Start pairing" : "Try again")
+                Text(LocalizedStringKey(host.phase == .idle ? "Start pairing" : "Try again"))
                     .font(.headline)
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
@@ -222,7 +222,7 @@ struct PairOnDeviceView: View {
                     dismiss()
                 }
             } label: {
-                Text(mode == .embedded ? "Continue" : "Done")
+                Text(LocalizedStringKey(mode == .embedded ? "Continue" : "Done"))
                     .font(.headline)
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
