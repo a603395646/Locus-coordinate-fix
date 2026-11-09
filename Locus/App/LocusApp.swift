@@ -1,11 +1,36 @@
 import CoreLocation
 import SwiftUI
 
+enum LocusLocalization {
+    static let languageKey = "locus.appLanguage"
+
+    static var locale: Locale {
+        switch UserDefaults.standard.string(forKey: languageKey) {
+        case "zh-Hans": return Locale(identifier: "zh-Hans")
+        case "en": return Locale(identifier: "en")
+        default: return .autoupdatingCurrent
+        }
+    }
+
+    static func string(_ key: String.LocalizationValue) -> String {
+        String(localized: key, locale: locale)
+    }
+}
+
 @main
 struct LocusApp: App {
     @StateObject private var session = SpoofSession()
     @StateObject private var pairing = PairingStore()
     @AppStorage(SetupGate.defaultsKey) private var setupComplete = false
+    @AppStorage(LocusLocalization.languageKey) private var appLanguage = "system"
+
+    private var appLocale: Locale {
+        switch appLanguage {
+        case "zh-Hans": return Locale(identifier: "zh-Hans")
+        case "en": return Locale(identifier: "en")
+        default: return .autoupdatingCurrent
+        }
+    }
 
     /// Map when setup finished, or when already paired outside this walkthrough.
     private var showMap: Bool {
@@ -26,6 +51,7 @@ struct LocusApp: App {
             }
             .environmentObject(session)
             .environmentObject(pairing)
+            .environment(\.locale, appLocale)
             .preferredColorScheme(.dark)
             .onOpenURL { url in
                 handleIncoming(url)
@@ -66,7 +92,7 @@ struct LocusApp: App {
         case "share":
             guard let sharedText = value("url") ?? value("text"),
                   !sharedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                session.lastError = "The shared map link is empty."
+                session.lastError = LocusLocalization.string("The shared map link is empty.")
                 return
             }
             Task { @MainActor in
@@ -85,12 +111,12 @@ struct LocusApp: App {
         case "set":
             guard let latitude = value("lat").flatMap(Double.init),
                   let longitude = value("lon").flatMap(Double.init) else {
-                session.lastError = "The Locus URL needs valid lat and lon values."
+                session.lastError = LocusLocalization.string("The Locus URL needs valid lat and lon values.")
                 return
             }
             let input = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
             guard CLLocationCoordinate2DIsValid(input) else {
-                session.lastError = "The Locus URL contains an invalid coordinate."
+                session.lastError = LocusLocalization.string("The Locus URL contains an invalid coordinate.")
                 return
             }
             let coordinate: CLLocationCoordinate2D
