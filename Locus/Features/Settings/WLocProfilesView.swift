@@ -121,16 +121,18 @@ struct WLocProfilesView: View {
                                 }
                                 .buttonStyle(.borderless)
                                 Spacer()
+                                if let wlocJSON = try? WLocProfile.exportWLOCJSON(profile) {
+                                    ShareLink(item: wlocJSON, subject: Text("WLOC settings")) {
+                                        Image(systemName: "square.and.arrow.up")
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .accessibilityLabel("Export WLOC JSON")
+                                }
                                 Menu {
                                     Button {
                                         profileToEdit = profile
                                     } label: {
                                         Label("Edit", systemImage: "pencil")
-                                    }
-                                    if let wlocJSON = try? WLocProfile.exportWLOCJSON(profile) {
-                                        ShareLink(item: wlocJSON, subject: Text("WLOC settings")) {
-                                            Label("Export WLOC JSON", systemImage: "square.and.arrow.up")
-                                        }
                                     }
                                     Button(role: .destructive) {
                                         delete(profile)
