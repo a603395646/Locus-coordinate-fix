@@ -422,7 +422,7 @@ private struct LocationDiagnosticsView: View {
 
     private func ageText(_ timestamp: Date) -> String {
         let seconds = max(0, Date().timeIntervalSince(timestamp))
-        return String(format: "%.1f s ago", seconds)
+        return LocusLocalization.string("\(String(format: "%.1f", seconds)) s ago")
     }
 
     private func boolText(_ value: Bool?) -> String {
