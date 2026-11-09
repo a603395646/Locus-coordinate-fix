@@ -84,12 +84,13 @@ enum GPXCodec {
         return coords
     }
 
-    static func export(_ coordinates: [CLLocationCoordinate2D], name: String = "Locus Route") -> String {
+    static func export(_ coordinates: [CLLocationCoordinate2D], name: String? = nil) -> String {
+        let trackName = name ?? LocusLocalization.string("Locus Route")
         var body = """
         <?xml version="1.0" encoding="UTF-8"?>
         <gpx version="1.1" creator="Locus" xmlns="http://www.topografix.com/GPX/1/1">
           <trk>
-            <name>\(name)</name>
+            <name>\(trackName)</name>
             <trkseg>
 
         """
