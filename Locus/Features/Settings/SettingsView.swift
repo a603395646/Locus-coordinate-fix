@@ -31,12 +31,14 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Language") {
+                Section {
                     Picker("App language", selection: $appLanguage) {
                         Text("System default").tag("system")
                         Text("English").tag("en")
                         Text("Simplified Chinese").tag("zh-Hans")
                     }
+                } header: {
+                    Text("Language")
                 } footer: {
                     Text("You can switch between English and Simplified Chinese at any time.")
                 }
