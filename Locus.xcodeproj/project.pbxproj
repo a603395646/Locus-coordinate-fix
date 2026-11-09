@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BEEF00010000000000000005 /* LocusLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEEF00010000000000000006 /* LocusLocalization.swift */; };
 		BEEF00010000000000000001 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = BEEF00010000000000000002 /* Localizable.strings */; };
 		A11CE0010000000000000011 /* WLocProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0010000000000000012 /* WLocProfile.swift */; };
 		A11CE0010000000000000013 /* WLocProfilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0010000000000000014 /* WLocProfilesView.swift */; };
@@ -39,6 +40,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BEEF00010000000000000006 /* LocusLocalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocusLocalization.swift; sourceTree = "<group>"; };
 		A11CE0010000000000000012 /* WLocProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WLocProfile.swift; sourceTree = "<group>"; };
 		A11CE0010000000000000014 /* WLocProfilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WLocProfilesView.swift; sourceTree = "<group>"; };
 		03DE64DA7097F210F1075553 /* LocusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocusApp.swift; sourceTree = "<group>"; };
@@ -201,6 +203,7 @@
 		B67E43CBD395C80F3D3345CB /* Support */ = {
 			isa = PBXGroup;
 			children = (
+				BEEF00010000000000000006 /* LocusLocalization.swift */,
 				BFAD463F53BD704A35A8E65F /* LocalDevVPN.swift */,
 				2E6BE765DFC4FB848609C8AA /* PairingDocumentPicker.swift */,
 				799094E9B1F051BEAD82D2C1 /* SavedPlace.swift */,
@@ -313,6 +316,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BEEF00010000000000000005 /* LocusLocalization.swift in Sources */,
 				C5B176B29163E524B776757A /* BackgroundKeepAlive.swift in Sources */,
 				A11CE0010000000000000001 /* MapDatum.swift in Sources */,
 				A11CE0010000000000000011 /* WLocProfile.swift in Sources */,
