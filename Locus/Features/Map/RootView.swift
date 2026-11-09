@@ -54,13 +54,13 @@ struct StatusBarView: View {
         case .idle:
             return tunnelConnected ? .notSpoofing : .connectVPN
         case .connecting:
-            return .status("Connecting…")
+            return .status(LocusLocalization.string("Connecting…"))
         case .active:
-            return .status("Spoofing")
+            return .status(LocusLocalization.string("Spoofing"))
         case .reconnecting:
-            return .status("Reconnecting…")
+            return .status(LocusLocalization.string("Reconnecting…"))
         case .dropped(let reason):
-            return .status(reason.isEmpty ? "Disconnected" : "Disconnected — \(reason)")
+            return .status(reason.isEmpty ? LocusLocalization.string("Disconnected") : LocusLocalization.string("Disconnected — \(reason)"))
         }
     }
 
@@ -82,8 +82,8 @@ struct StatusBarView: View {
 
     private var title: String {
         switch display {
-        case .notSpoofing: return "Not Spoofing"
-        case .connectVPN: return "Connect LocalDevVPN"
+        case .notSpoofing: return LocusLocalization.string("Not Spoofing")
+        case .connectVPN: return LocusLocalization.string("Connect LocalDevVPN")
         case .status(let text): return text
         }
     }
@@ -206,7 +206,7 @@ struct BottomControlsView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "dot.circle.and.hand.point.up.left.fill")
-                        Text(session.joystickActive ? "On" : "Joy")
+                        Text(LocalizedStringKey(session.joystickActive ? "On" : "Joy"))
                             .lineLimit(1)
                     }
                     .font(.subheadline.weight(.semibold))
