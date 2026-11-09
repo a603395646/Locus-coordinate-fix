@@ -15,15 +15,15 @@ enum LocationEngineError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidIP: return "Tunnel IP is invalid. Check Settings → Tunnel IP (usually 10.7.0.1)."
-        case .pairingRead: return "Could not read the RPPairing file. Generate one with idevice_pair in RPPairing mode."
-        case .tunnelCreate: return "Could not open the developer tunnel. Is LocalDevVPN connected on Wi‑Fi?"
-        case .remoteServer: return "Connected to the tunnel but RemoteXPC handshake failed."
-        case .simulationCreate: return "Could not open Apple’s location simulation service."
-        case .locationSet: return "Failed to set simulated coordinates."
-        case .invalidCoordinate: return "The selected map coordinate is invalid."
-        case .locationClear: return "Failed to clear simulated location."
-        case .notActive: return "No active simulation session."
+        case .invalidIP: return LocusLocalization.string("Tunnel IP is invalid. Check Settings → Tunnel IP (usually 10.7.0.1).")
+        case .pairingRead: return LocusLocalization.string("Could not read the RPPairing file. Generate one with idevice_pair in RPPairing mode.")
+        case .tunnelCreate: return LocusLocalization.string("Could not open the developer tunnel. Is LocalDevVPN connected on Wi‑Fi?")
+        case .remoteServer: return LocusLocalization.string("Connected to the tunnel but RemoteXPC handshake failed.")
+        case .simulationCreate: return LocusLocalization.string("Could not open Apple’s location simulation service.")
+        case .locationSet: return LocusLocalization.string("Failed to set simulated coordinates.")
+        case .invalidCoordinate: return LocusLocalization.string("The selected map coordinate is invalid.")
+        case .locationClear: return LocusLocalization.string("Failed to clear simulated location.")
+        case .notActive: return LocusLocalization.string("No active simulation session.")
         }
     }
 
