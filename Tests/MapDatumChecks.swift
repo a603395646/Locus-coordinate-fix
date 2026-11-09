@@ -105,7 +105,9 @@ struct MapDatumChecks {
         let gcjProfile = WLocProfile(
             name: "GCJ profile",
             coordinate: chongqingGCJ02,
-            coordinateReference: "GCJ-02"
+            coordinateReference: "GCJ-02",
+            accuracyMeters: 42,
+            randomRadiusMeters: 60
         )
         let wgsProfileOnChinaMap = wgsProfile.mapCoordinate(for: .automaticChina)
         assert(abs(wgsProfileOnChinaMap.latitude - chongqingGCJ02.latitude) < 0.000001)
@@ -114,6 +116,16 @@ struct MapDatumChecks {
         let gcjProfileOnOriginalMap = gcjProfile.mapCoordinate(for: .off)
         assert(abs(gcjProfileOnOriginalMap.latitude - chongqingWGS84.latitude) < 0.0000001)
         assert(abs(gcjProfileOnOriginalMap.longitude - chongqingWGS84.longitude) < 0.0000001)
+
+        // WLOC export must convert a mainland GCJ-02 map pin back to WGS-84.
+        let exportedWLocJSON = try! WLocProfile.exportWLOCJSON(gcjProfile)
+        let exportedWLoc = try! WLocProfile.importJSON(Data(exportedWLocJSON.utf8))
+        assert(exportedWLoc.count == 1)
+        assert(exportedWLoc[0].coordinateReference == "WGS-84")
+        assert(abs(exportedWLoc[0].latitude - chongqingWGS84.latitude) < 0.000001)
+        assert(abs(exportedWLoc[0].longitude - chongqingWGS84.longitude) < 0.000001)
+        assert(exportedWLoc[0].accuracyMeters == 42)
+        assert(exportedWLoc[0].randomRadiusMeters == 60)
 
         let invalidGCJProfile = WLocProfile(
             name: "Invalid Hong Kong GCJ profile",
