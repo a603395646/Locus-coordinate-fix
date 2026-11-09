@@ -8,7 +8,7 @@ enum LocusLocalization {
         switch UserDefaults.standard.string(forKey: languageKey) {
         case "zh-Hans": return Locale(identifier: "zh-Hans")
         case "en": return Locale(identifier: "en")
-        default: return .autoupdatingCurrent
+        default: return Locale(identifier: Bundle.main.preferredLocalizations.first ?? Locale.current.identifier)
         }
     }
 
@@ -28,7 +28,7 @@ struct LocusApp: App {
         switch appLanguage {
         case "zh-Hans": return Locale(identifier: "zh-Hans")
         case "en": return Locale(identifier: "en")
-        default: return .autoupdatingCurrent
+        default: return Locale(identifier: Bundle.main.preferredLocalizations.first ?? Locale.current.identifier)
         }
     }
 
