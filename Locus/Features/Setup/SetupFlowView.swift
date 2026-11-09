@@ -307,7 +307,7 @@ struct SetupFlowView: View {
                     .foregroundStyle(LocusTheme.accent)
 
                 VStack(spacing: 10) {
-                    Text(localDevVPNInstalled ? "Connect LocalDevVPN" : "One more app")
+                    Text(LocalizedStringKey(localDevVPNInstalled ? "Connect LocalDevVPN" : "One more app"))
                         .font(.title.weight(.bold))
 
                     Text(localDevVPNInstalled
@@ -346,7 +346,7 @@ struct SetupFlowView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: localDevVPNInstalled ? "lock.shield.fill" : "apple.logo")
-                        Text(localDevVPNInstalled ? "Open LocalDevVPN" : "Get LocalDevVPN")
+                        Text(LocalizedStringKey(localDevVPNInstalled ? "Open LocalDevVPN" : "Get LocalDevVPN"))
                             .fontWeight(.semibold)
                     }
                     .frame(maxWidth: .infinity)
