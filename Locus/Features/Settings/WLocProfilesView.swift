@@ -12,6 +12,9 @@ struct WLocProfilesView: View {
     @State private var profiles = WLocProfile.load()
     @State private var actionError: String?
     @State private var profileName = ""
+    @State private var accuracyMeters = 25.0
+    @State private var randomRadiusMeters = 0.0
+    @State private var profileToEdit: WLocProfile?
     @State private var mapLinkText = ""
     @State private var isParsingMapLink = false
     @State private var showImporter = false
@@ -26,6 +29,16 @@ struct WLocProfilesView: View {
             Section {
                 TextField("Profile name", text: $profileName)
                     .textInputAutocapitalization(.words)
+                Stepper(value: $accuracyMeters, in: 1...10_000, step: 5) {
+                    LabeledContent("Accuracy metadata") {
+                        Text("\(Int(accuracyMeters)) m").monospacedDigit()
+                    }
+                }
+                Stepper(value: $randomRadiusMeters, in: 0...10_000, step: 10) {
+                    LabeledContent("Random radius") {
+                        Text("\(Int(randomRadiusMeters)) m").monospacedDigit()
+                    }
+                }
                 Button {
                     saveCurrentPin()
                 } label: {
@@ -33,7 +46,7 @@ struct WLocProfilesView: View {
                 }
                 .disabled(session.pin == nil || profileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             } footer: {
-                Text("Profiles are stored locally on this iPhone. Saving a pin records its current map coordinate reference; it does not change the device location by itself.")
+                Text("Profiles are stored locally on this iPhone. Saving a pin records its current map coordinate reference; it does not change the device location by itself. Accuracy is retained as WLOC metadata; random radius is applied once when activated.")
             }
 
             Section {
@@ -108,13 +121,27 @@ struct WLocProfilesView: View {
                                 }
                                 .buttonStyle(.borderless)
                                 Spacer()
-                                Button(role: .destructive) {
-                                    delete(profile)
+                                Menu {
+                                    Button {
+                                        profileToEdit = profile
+                                    } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
+                                    if let wlocJSON = try? WLocProfile.exportWLOCJSON(profile) {
+                                        ShareLink(item: wlocJSON, subject: Text("WLOC settings")) {
+                                            Label("Export WLOC JSON", systemImage: "square.and.arrow.up")
+                                        }
+                                    }
+                                    Button(role: .destructive) {
+                                        delete(profile)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
                                 } label: {
-                                    Image(systemName: "trash")
+                                    Image(systemName: "ellipsis.circle")
                                 }
                                 .buttonStyle(.borderless)
-                                .accessibilityLabel("Delete \(profile.name)")
+                                .accessibilityLabel("Profile actions for \(profile.name)")
                             }
                             .font(.subheadline)
                         }
@@ -188,6 +215,13 @@ struct WLocProfilesView: View {
         }
         .navigationTitle("Location profiles")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $profileToEdit) { profile in
+            WLocProfileEditorView(profile: profile) { updated in
+                guard let index = profiles.firstIndex(where: { $0.id == updated.id }) else { return }
+                profiles[index] = updated
+                WLocProfile.save(profiles)
+            }
+        }
         .fileImporter(
             isPresented: $showImporter,
             allowedContentTypes: [.json],
@@ -208,7 +242,7 @@ struct WLocProfilesView: View {
     private func pasteMapLink() {
         guard let value = UIPasteboard.general.string,
               !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            actionError = "The clipboard does not contain a map link or coordinate."
+            actionError = LocusLocalization.string("The clipboard does not contain a map link or coordinate.")
             return
         }
         mapLinkText = value
@@ -217,7 +251,7 @@ struct WLocProfilesView: View {
     @MainActor
     private func parseAndApplyMapLink() async {
         guard pairing.hasPairingFile else {
-            actionError = "Import an RPPairing file in Settings first."
+            actionError = LocusLocalization.string("Import an RPPairing file in Settings first.")
             return
         }
         isParsingMapLink = true
@@ -237,7 +271,7 @@ struct WLocProfilesView: View {
             let coordinate = randomizedCoordinate(base, radiusMeters: profile.randomRadiusMeters)
             session.teleport(to: coordinate, pairing: pairing)
             guard session.isSpoofing else {
-                actionError = session.lastError ?? "Could not apply this location. Check the device connection."
+                actionError = session.lastError ?? LocusLocalization.string("Could not apply this location. Check the device connection.")
                 return
             }
             session.requestMapFocus(coordinate)
@@ -256,7 +290,7 @@ struct WLocProfilesView: View {
 
     private func apply(_ profile: WLocProfile) {
         guard pairing.hasPairingFile else {
-            actionError = "Import an RPPairing file in Settings first."
+            actionError = LocusLocalization.string("Import an RPPairing file in Settings first.")
             return
         }
 
@@ -264,7 +298,7 @@ struct WLocProfilesView: View {
         let coordinate = randomizedCoordinate(base, radiusMeters: profile.randomRadiusMeters)
         session.teleport(to: coordinate, pairing: pairing)
         guard session.isSpoofing else {
-            actionError = session.lastError ?? "Could not apply this location. Check the device connection."
+            actionError = session.lastError ?? LocusLocalization.string("Could not apply this location. Check the device connection.")
             return
         }
         session.requestMapFocus(coordinate)
@@ -274,7 +308,7 @@ struct WLocProfilesView: View {
     private func restoreRealLocation() {
         session.stop(pairing: pairing)
         guard case .idle = session.status else {
-            actionError = session.lastError ?? "Could not restore the real location."
+            actionError = session.lastError ?? LocusLocalization.string("Could not restore the real location.")
             return
         }
         onRestore()
@@ -306,13 +340,17 @@ struct WLocProfilesView: View {
         let profile = WLocProfile(
             name: profileName.trimmingCharacters(in: .whitespacesAndNewlines),
             coordinate: coordinate,
-            coordinateReference: reference
+            coordinateReference: reference,
+            accuracyMeters: accuracyMeters,
+            randomRadiusMeters: randomRadiusMeters
         )
         guard profile.isValid else { return }
         profiles.insert(profile, at: 0)
         WLocProfile.save(profiles)
         profileName = ""
-        importMessage = "Profile saved on this device."
+        accuracyMeters = 25
+        randomRadiusMeters = 0
+        importMessage = LocusLocalization.string("Profile saved on this device.")
     }
 
     private func delete(_ profile: WLocProfile) {
@@ -331,13 +369,95 @@ struct WLocProfilesView: View {
             let accessing = url.startAccessingSecurityScopedResource()
             defer { if accessing { url.stopAccessingSecurityScopedResource() } }
             let imported = try WLocProfile.importJSON(Data(contentsOf: url))
-            let existingIDs = Set(profiles.map(\.id))
-            let additions = imported.filter { !existingIDs.contains($0.id) }
+            let additions = imported.filter { candidate in
+                !profiles.contains { existing in
+                    existing.id == candidate.id
+                        || (existing.name.caseInsensitiveCompare(candidate.name) == .orderedSame
+                            && abs(existing.latitude - candidate.latitude) < 0.000001
+                            && abs(existing.longitude - candidate.longitude) < 0.000001
+                            && existing.accuracyMeters == candidate.accuracyMeters
+                            && existing.randomRadiusMeters == candidate.randomRadiusMeters)
+                }
+            }
             profiles.append(contentsOf: additions)
             WLocProfile.save(profiles)
-            importMessage = "Imported \(additions.count) profile(s). WLOC accuracy is retained as metadata; Locus applies the saved coordinate."
+            importMessage = LocusLocalization.string("Imported \(additions.count) profile(s). WLOC accuracy is retained as metadata; Locus applies the saved coordinate.")
         } catch {
-            importMessage = "Import failed: \(error.localizedDescription)"
+            importMessage = LocusLocalization.string("Import failed: \(error.localizedDescription)")
+        }
+    }
+}
+
+
+private struct WLocProfileEditorView: View {
+    let original: WLocProfile
+    let onSave: (WLocProfile) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var name: String
+    @State private var accuracyMeters: Double
+    @State private var randomRadiusMeters: Double
+
+    init(profile: WLocProfile, onSave: @escaping (WLocProfile) -> Void) {
+        original = profile
+        self.onSave = onSave
+        _name = State(initialValue: profile.name)
+        _accuracyMeters = State(initialValue: profile.accuracyMeters)
+        _randomRadiusMeters = State(initialValue: profile.randomRadiusMeters)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Profile") {
+                    TextField("Profile name", text: $name)
+                    LabeledContent("Coordinates", value: String(format: "%.6f, %.6f", original.latitude, original.longitude))
+                    LabeledContent("Coordinate reference", value: original.coordinateReference)
+                }
+
+                Section("WLOC parameters") {
+                    Stepper(value: $accuracyMeters, in: 1...10_000, step: 5) {
+                        LabeledContent("Accuracy metadata") {
+                            Text("\\(Int(accuracyMeters)) m").monospacedDigit()
+                        }
+                    }
+                    Stepper(value: $randomRadiusMeters, in: 0...10_000, step: 10) {
+                        LabeledContent("Random radius") {
+                            Text("\\(Int(randomRadiusMeters)) m").monospacedDigit()
+                        }
+                    }
+                }
+
+                Section {
+                    Text("Accuracy is preserved for WLOC compatibility. The current DVT engine applies the coordinate only; random radius is applied once when the profile is activated.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Edit profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        let updated = WLocProfile(
+                            id: original.id,
+                            name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+                            coordinate: original.coordinate,
+                            coordinateReference: original.coordinateReference,
+                            createdAt: original.createdAt,
+                            accuracyMeters: accuracyMeters,
+                            randomRadiusMeters: randomRadiusMeters
+                        )
+                        guard updated.isValid else { return }
+                        onSave(updated)
+                        dismiss()
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
         }
     }
 }
