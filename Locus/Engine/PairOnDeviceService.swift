@@ -215,7 +215,7 @@ final class PairOnDeviceService: ObservableObject {
             if let cMessage = err.pointee.message {
                 message = String(cString: cMessage)
             } else {
-                message = LocusLocalization.string("Unknown pairing error (\(err.pointee.code))")
+                message = LocusLocalization.string("Unknown pairing error (\(Int(err.pointee.code)))")
             }
             idevice_error_free(err)
             DispatchQueue.main.async { box.owner?.handleFailure(message) }
