@@ -376,7 +376,7 @@ struct MapHomeView: View {
     private func buildRoadRoute() {
         guard let start = routeStart ?? session.simulated ?? session.pin,
               let end = routeEnd else {
-            session.lastError = "Set a route start and end."
+            session.lastError = LocusLocalization.string("Set a route start and end.")
             return
         }
         isRouting = true
@@ -399,7 +399,7 @@ struct MapHomeView: View {
     private func playRoute() {
         let path = routeCoords.isEmpty ? drawnPath : routeCoords
         guard path.count >= 2 else {
-            session.lastError = "Build or draw a route first."
+            session.lastError = LocusLocalization.string("Build or draw a route first.")
             return
         }
         showRouteSheet = false
@@ -426,7 +426,7 @@ struct MapHomeView: View {
     private func exportGPX() {
         let path = routeCoords.isEmpty ? drawnPath : routeCoords
         guard !path.isEmpty else {
-            session.lastError = "Nothing to export."
+            session.lastError = LocusLocalization.string("Nothing to export.")
             return
         }
         // GPX is a WGS-84 interchange format; convert map coordinates back on export.
