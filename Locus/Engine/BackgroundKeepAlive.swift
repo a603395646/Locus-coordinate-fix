@@ -90,7 +90,7 @@ final class BackgroundKeepAlive: NSObject, CLLocationManagerDelegate {
         switch status {
         case .fullAccuracy: return LocusLocalization.string("Full accuracy")
         case .reducedAccuracy: return LocusLocalization.string("Reduced accuracy")
-        @unknown default: return "Unknown"
+        @unknown default: return LocusLocalization.string("Unknown")
         }
     }
 }
