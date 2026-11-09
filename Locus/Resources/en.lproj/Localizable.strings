@@ -272,3 +272,12 @@
 "iPhone connected" = "iPhone connected";
 "idevice DVT location simulation" = "idevice DVT location simulation";
 "locus, n. — a place. From the Latin for where you are." = "locus, n. — a place. From the Latin for where you are.";
+"Connecting…" = "Connecting…";
+"No route found" = "No route found";
+"No track points found in GPX" = "No track points found in GPX";
+"Locus Route" = "Locus Route";
+"Imported WLOC" = "Imported WLOC";
+"Shared location" = "Shared location";
+"WGS-84" = "WGS-84";
+"GCJ-02" = "GCJ-02";
+"%@ s ago" = "%@ s ago";
