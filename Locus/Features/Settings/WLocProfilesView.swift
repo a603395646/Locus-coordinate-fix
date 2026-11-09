@@ -420,12 +420,12 @@ private struct WLocProfileEditorView: View {
                 Section("WLOC parameters") {
                     Stepper(value: $accuracyMeters, in: 1...10_000, step: 5) {
                         LabeledContent("Accuracy metadata") {
-                            Text("\\(Int(accuracyMeters)) m").monospacedDigit()
+                            Text("\(Int(accuracyMeters)) m").monospacedDigit()
                         }
                     }
                     Stepper(value: $randomRadiusMeters, in: 0...10_000, step: 10) {
                         LabeledContent("Random radius") {
-                            Text("\\(Int(randomRadiusMeters)) m").monospacedDigit()
+                            Text("\(Int(randomRadiusMeters)) m").monospacedDigit()
                         }
                     }
                 }
