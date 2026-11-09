@@ -12,6 +12,7 @@ struct SettingsView: View {
     @State private var showNameEasterEgg = false
     @State private var tunnelIP = TunnelConfig.targetIP
     @AppStorage(MapDatumMode.defaultsKey) private var mapDatumMode = MapDatumMode.automaticChina.rawValue
+    @AppStorage(LocusLocalization.languageKey) private var appLanguage = "system"
     @State private var localDevVPNInstalled = LocalDevVPN.isInstalled
     @State private var showLocationDiagnostics = false
     @Environment(\.scenePhase) private var scenePhase
@@ -30,9 +31,19 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("Language") {
+                    Picker("App language", selection: $appLanguage) {
+                        Text("System default").tag("system")
+                        Text("English").tag("en")
+                        Text("Simplified Chinese").tag("zh-Hans")
+                    }
+                } footer: {
+                    Text("You can switch between English and Simplified Chinese at any time.")
+                }
+
                 Section {
                     Label {
-                        Text(pairing.hasPairingFile ? "RPPairing file installed" : "No pairing file")
+                        Text(LocalizedStringKey(pairing.hasPairingFile ? "RPPairing file installed" : "No pairing file"))
                     } icon: {
                         Image(systemName: pairing.hasPairingFile ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
                             .foregroundStyle(pairing.hasPairingFile ? LocusTheme.statusGood : LocusTheme.statusWarn)
@@ -62,9 +73,9 @@ struct SettingsView: View {
                 } header: {
                     Text("Developer pairing")
                 } footer: {
-                    Text(supportsOnDevicePairing
+                    Text(LocalizedStringKey(supportsOnDevicePairing
                          ? "On iOS 27, use Pair on this iPhone — no computer. Locus advertises a pairable host; confirm the 6-digit code under Settings › Privacy & Security › Developer Mode › Pair with Host. On older iOS, import an RPPairing file from idevice_pair (not a SideStore lockdown .mobiledevicepairing). LiveContainer: enable Fix File Picker on Locus, or use Paste / Share → LiveContainer → Locus."
-                         : "Import an RPPairing file from idevice_pair (not a SideStore lockdown .mobiledevicepairing). If the file picker fails (common in LiveContainer), enable Fix File Picker on the app, share the file into LiveContainer → Locus, or copy the plist and use Paste.")
+                         : "Import an RPPairing file from idevice_pair (not a SideStore lockdown .mobiledevicepairing). If the file picker fails (common in LiveContainer), enable Fix File Picker on the app, share the file into LiveContainer → Locus, or copy the plist and use Paste."))
                 }
 
                 Section {
@@ -75,7 +86,7 @@ struct SettingsView: View {
                             TunnelConfig.setTargetIP(tunnelIP)
                         }
                     LabeledContent("Status") {
-                        Text(LocalDevVPN.isConnected ? "Connected" : "Not connected")
+                        Text(LocalizedStringKey(LocalDevVPN.isConnected ? "Connected" : "Not connected"))
                             .foregroundStyle(LocalDevVPN.isConnected ? LocusTheme.statusGood : LocusTheme.statusWarn)
                     }
                     Button("Save tunnel IP") {
@@ -88,10 +99,11 @@ struct SettingsView: View {
                             LocalDevVPN.openAppStore()
                         }
                     } label: {
-                        Label(
-                            localDevVPNInstalled ? "Open LocalDevVPN" : "Get LocalDevVPN (App Store)",
-                            systemImage: localDevVPNInstalled ? "lock.shield.fill" : "arrow.down.app.fill"
-                        )
+                        Label {
+                            Text(LocalizedStringKey(localDevVPNInstalled ? "Open LocalDevVPN" : "Get LocalDevVPN (App Store)"))
+                        } icon: {
+                            Image(systemName: localDevVPNInstalled ? "lock.shield.fill" : "arrow.down.app.fill")
+                        }
                     }
                 } header: {
                     Text("Tunnel")
@@ -139,7 +151,9 @@ struct SettingsView: View {
 
                 Section("About") {
                     LabeledContent("Version", value: appVersion)
-                    LabeledContent("Engine", value: "idevice DVT location simulation")
+                    LabeledContent("Engine") {
+                        Text("idevice DVT location simulation")
+                    }
                     Text("Locus is free and open source (MIT). Location injection uses the MIT-licensed idevice FFI.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -318,8 +332,12 @@ private struct LocationDiagnosticsView: View {
             List {
                 Section("Engine") {
                     LabeledContent("VPN", value: LocalDevVPN.isConnected ? "Connected" : "Not connected")
-                    LabeledContent("DVT simulation", value: LocationEngine.isSessionActive ? "Active" : "Inactive")
-                    LabeledContent("Session", value: session.status.label)
+                    LabeledContent("DVT simulation") {
+                        Text(LocalizedStringKey(LocationEngine.isSessionActive ? "Active" : "Inactive"))
+                    }
+                    LabeledContent("Session") {
+                    Text(session.status.label)
+                }
                     LabeledContent("Coordinate mode", value: MapDatumMode.current.title)
                 }
 
