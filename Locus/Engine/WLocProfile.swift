@@ -117,6 +117,28 @@ struct WLocProfile: Identifiable, Codable, Equatable {
         return json
     }
 
+    /// Exports one profile in WLOC's original persistent-settings shape.
+    /// WLOC expects WGS-84 coordinates, so convert saved mainland GCJ-02 map pins first.
+    static func exportWLOCJSON(_ profile: WLocProfile) throws -> String {
+        guard profile.isValid else { throw WLocProfileError.invalidProfiles }
+        let wgs84 = profile.coordinateReference == "GCJ-02"
+            ? ChinaCoordinateTransform.gcj02ToWGS84(profile.coordinate)
+            : profile.coordinate
+        let payload = WLocPersistentSettings(
+            longitude: wgs84.longitude,
+            latitude: wgs84.latitude,
+            accuracy: profile.accuracyMeters,
+            randomRadius: profile.randomRadiusMeters
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(payload)
+        guard let json = String(data: data, encoding: .utf8) else {
+            throw CocoaError(.fileWriteInapplicableStringEncoding)
+        }
+        return json
+    }
+
     static func importJSON(_ data: Data) throws -> [WLocProfile] {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -163,7 +185,7 @@ struct WLocProfile: Identifiable, Codable, Equatable {
         let importedName = (settings["name"] as? String)?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let profile = WLocProfile(
-            name: importedName.isEmpty ? "Imported WLOC" : importedName,
+            name: importedName.isEmpty ? LocusLocalization.string("Imported WLOC") : importedName,
             coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
             coordinateReference: "WGS-84",
             accuracyMeters: number("accuracy") ?? 25,
@@ -228,7 +250,7 @@ enum WLocMapLinkParser {
         let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         if let coordinate = parseBareCoordinate(text) {
             return WLocProfile(
-                name: "Shared location",
+                name: LocusLocalization.string("Shared location"),
                 coordinate: coordinate,
                 coordinateReference: "WGS-84"
             )
@@ -370,6 +392,13 @@ enum WLocMapLinkParser {
     }
 }
 
+private struct WLocPersistentSettings: Codable {
+    let longitude: Double
+    let latitude: Double
+    let accuracy: Double
+    let randomRadius: Double
+}
+
 private struct WLocProfileExport: Codable {
     let schema: String
     let version: Int
@@ -386,13 +415,13 @@ enum WLocProfileError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unsupportedFormat:
-            return "This is not a supported Locus profile export."
+            return LocusLocalization.string("This is not a supported Locus profile export.")
         case .invalidProfiles:
-            return "The file contains invalid coordinates or too many profiles."
+            return LocusLocalization.string("The file contains invalid coordinates or too many profiles.")
         case .unsupportedMapLink:
-            return "This map link is not supported. Use an Apple Maps, Amap or Google Maps share link."
+            return LocusLocalization.string("This map link is not supported. Use an Apple Maps, Amap or Google Maps share link.")
         case .mapLinkFetchFailed:
-            return "Could not expand this map share link. Check the network and try again."
+            return LocusLocalization.string("Could not expand this map share link. Check the network and try again.")
         }
     }
 }
