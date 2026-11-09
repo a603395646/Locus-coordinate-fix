@@ -18,9 +18,9 @@ enum MapDatumMode: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .automaticChina:
-            return "Automatic (mainland China)"
+            return LocusLocalization.string("Automatic (mainland China)")
         case .off:
-            return "Off (original coordinates)"
+            return LocusLocalization.string("Off (original coordinates)")
         }
     }
 
