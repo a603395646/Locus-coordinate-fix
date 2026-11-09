@@ -331,7 +331,9 @@ private struct LocationDiagnosticsView: View {
         NavigationStack {
             List {
                 Section("Engine") {
-                    LabeledContent("VPN", value: LocalDevVPN.isConnected ? "Connected" : "Not connected")
+                    LabeledContent("VPN") {
+                        Text(LocalizedStringKey(LocalDevVPN.isConnected ? "Connected" : "Not connected"))
+                    }
                     LabeledContent("DVT simulation") {
                         Text(LocalizedStringKey(LocationEngine.isSessionActive ? "Active" : "Inactive"))
                     }
@@ -403,7 +405,7 @@ private struct LocationDiagnosticsView: View {
     }
 
     private func accuracyText(_ value: CLLocationAccuracy) -> String {
-        value >= 0 ? String(format: "%.1f m", value) : "Unavailable"
+        value >= 0 ? String(format: "%.1f m", value) : LocusLocalization.string("Unavailable")
     }
 
     private func metersText(_ value: CLLocationDistance) -> String {
@@ -411,7 +413,7 @@ private struct LocationDiagnosticsView: View {
     }
 
     private func speedText(_ value: CLLocationSpeed) -> String {
-        value >= 0 ? String(format: "%.2f m/s", value) : "Unavailable"
+        value >= 0 ? String(format: "%.2f m/s", value) : LocusLocalization.string("Unavailable")
     }
 
     private func degreesText(_ value: CLLocationDirection) -> String {
@@ -424,7 +426,7 @@ private struct LocationDiagnosticsView: View {
     }
 
     private func boolText(_ value: Bool?) -> String {
-        guard let value else { return "Unavailable" }
-        return value ? "Yes" : "No"
+        guard let value else { return LocusLocalization.string("Unavailable") }
+        return LocusLocalization.string(value ? "Yes" : "No")
     }
 }
