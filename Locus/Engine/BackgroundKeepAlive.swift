@@ -77,19 +77,19 @@ final class BackgroundKeepAlive: NSObject, CLLocationManagerDelegate {
 
     private static func authorizationName(_ status: CLAuthorizationStatus) -> String {
         switch status {
-        case .notDetermined: return "Not determined"
-        case .restricted: return "Restricted"
-        case .denied: return "Denied"
-        case .authorizedAlways: return "Always"
-        case .authorizedWhenInUse: return "While using"
-        @unknown default: return "Unknown"
+        case .notDetermined: return LocusLocalization.string("Not determined")
+        case .restricted: return LocusLocalization.string("Restricted")
+        case .denied: return LocusLocalization.string("Denied")
+        case .authorizedAlways: return LocusLocalization.string("Always")
+        case .authorizedWhenInUse: return LocusLocalization.string("While using")
+        @unknown default: return LocusLocalization.string("Unknown")
         }
     }
 
     private static func accuracyAuthorizationName(_ status: CLAccuracyAuthorization) -> String {
         switch status {
-        case .fullAccuracy: return "Full accuracy"
-        case .reducedAccuracy: return "Reduced accuracy"
+        case .fullAccuracy: return LocusLocalization.string("Full accuracy")
+        case .reducedAccuracy: return LocusLocalization.string("Reduced accuracy")
         @unknown default: return "Unknown"
         }
     }
