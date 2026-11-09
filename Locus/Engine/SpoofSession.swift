@@ -11,10 +11,10 @@ enum TravelMode: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .walk: return "Walk"
-        case .run: return "Run"
-        case .cycle: return "Cycle"
-        case .drive: return "Drive"
+        case .walk: return LocusLocalization.string("Walk")
+        case .run: return LocusLocalization.string("Run")
+        case .cycle: return LocusLocalization.string("Cycle")
+        case .drive: return LocusLocalization.string("Drive")
         }
     }
 
@@ -54,11 +54,11 @@ enum SpoofStatus: Equatable {
 
     var label: String {
         switch self {
-        case .idle: return "Not Spoofing"
-        case .connecting: return "Starting…"
-        case .active: return "Spoofing"
-        case .reconnecting: return "Reconnecting…"
-        case .dropped: return "Interrupted"
+        case .idle: return LocusLocalization.string("Not Spoofing")
+        case .connecting: return LocusLocalization.string("Starting…")
+        case .active: return LocusLocalization.string("Spoofing")
+        case .reconnecting: return LocusLocalization.string("Reconnecting…")
+        case .dropped: return LocusLocalization.string("Interrupted")
         }
     }
 
@@ -127,7 +127,7 @@ final class SpoofSession: ObservableObject {
 
     func teleport(to coordinate: CLLocationCoordinate2D, pairing: PairingStore) {
         guard pairing.hasPairingFile else {
-            lastError = "Import an RPPairing file in Settings first."
+            lastError = LocusLocalization.string("Import an RPPairing file in Settings first.")
             return
         }
         pin = coordinate
@@ -176,7 +176,7 @@ final class SpoofSession: ObservableObject {
         }
         let start = simulated ?? pin ?? realCoordinate
         guard let start else {
-            lastError = "Drop a pin or teleport somewhere before using the joystick."
+            lastError = LocusLocalization.string("Drop a pin or teleport somewhere before using the joystick.")
             return
         }
         if simulated == nil {
@@ -298,7 +298,7 @@ final class SpoofSession: ObservableObject {
 
     private static func isGenericFavoriteName(_ name: String) -> Bool {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty || trimmed == "Favorite" { return true }
+        if trimmed.isEmpty || trimmed == LocusLocalization.string("Favorite") { return true }
         // Coordinate-looking labels from older teleports.
         let parts = trimmed.split(separator: ",")
         if parts.count == 2,
@@ -437,7 +437,7 @@ final class SpoofSession: ObservableObject {
     private func postDropNotification(_ message: String) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
         let content = UNMutableNotificationContent()
-        content.title = "Locus spoof dropped"
+        content.title = LocusLocalization.string("Locus spoof dropped")
         content.body = message
         content.sound = .default
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
