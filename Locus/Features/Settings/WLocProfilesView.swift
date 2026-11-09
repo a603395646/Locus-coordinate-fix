@@ -153,7 +153,9 @@ struct WLocProfilesView: View {
 
 
             Section("Device location") {
-                LabeledContent("Status", value: session.isSpoofing ? "Active" : "Not active")
+                LabeledContent("Status") {
+                    Text(LocalizedStringKey(session.isSpoofing ? "Active" : "Not active"))
+                }
                 if session.isSpoofing {
                     Button(role: .destructive) {
                         restoreRealLocation()
@@ -202,9 +204,9 @@ struct WLocProfilesView: View {
             }
 
             Section("Compatibility") {
-                LabeledContent("Storage", value: "On this device")
-                LabeledContent("Format", value: "Locus v1 / WLOC settings")
-                LabeledContent("Network access", value: "Not required for profile storage")
+                LabeledContent("Storage") { Text("On this device") }
+                LabeledContent("Format") { Text("Locus v1 / WLOC settings") }
+                LabeledContent("Network access") { Text("Not required for profile storage") }
                 Text("Accuracy is retained as WLOC metadata; the current DVT location engine applies coordinates but does not set horizontal accuracy. A random radius is applied once when a profile is activated to avoid continuous location jitter.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
