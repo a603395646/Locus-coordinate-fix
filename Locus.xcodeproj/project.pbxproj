@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BEEF00010000000000000001 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = BEEF00010000000000000002 /* Localizable.strings */; };
 		A11CE0010000000000000011 /* WLocProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0010000000000000012 /* WLocProfile.swift */; };
 		A11CE0010000000000000013 /* WLocProfilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11CE0010000000000000014 /* WLocProfilesView.swift */; };
 		0C78ABD1E0B70A0732F7EE2F /* PairOnDeviceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE84038C9223A84BAFFAE233 /* PairOnDeviceView.swift */; };
@@ -70,7 +71,21 @@
 		F714A23C4C718E67E978565F /* MapHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapHomeView.swift; sourceTree = "<group>"; };
 		FE9BF680256F4FF39E4FECB0 /* idevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = idevice.h; sourceTree = "<group>"; };
 		FF1AF0F32E88B4227CA45694 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		BEEF00010000000000000003 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		BEEF00010000000000000004 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXVariantGroup section */
+		BEEF00010000000000000002 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BEEF00010000000000000003 /* en */,
+				BEEF00010000000000000004 /* zh-Hans */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin PBXGroup section */
 		04819CB404D166B850594890 /* Settings */ = {
@@ -219,6 +234,7 @@
 			children = (
 				2D4CA41C622A34E45EF21F54 /* Assets.xcassets */,
 				3B51D4F370EFC220A54A082F /* Locus.entitlements */,
+				BEEF00010000000000000002 /* Localizable.strings */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -265,6 +281,7 @@
 			knownRegions = (
 				Base,
 				en,
+				"zh-Hans",
 			);
 			mainGroup = 796058090ADB9656F1AC489F;
 			minimizedProjectReferenceProxies = 1;
@@ -285,6 +302,7 @@
 			files = (
 				170627CC7AAA8335B2A3277F /* AppIcon.icon in Resources */,
 				74A5BCF6953128864737A070 /* Assets.xcassets in Resources */,
+				BEEF00010000000000000001 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -392,7 +410,7 @@
 				CODE_SIGN_ENTITLEMENTS = Locus/Resources/Locus.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_BITCODE = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -403,7 +421,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Vendor/idevice",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lidevice_ffi",
