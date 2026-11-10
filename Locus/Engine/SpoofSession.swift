@@ -125,13 +125,17 @@ final class SpoofSession: ObservableObject {
         mapFocusRequestID = nil
     }
 
-    func teleport(to coordinate: CLLocationCoordinate2D, pairing: PairingStore) {
+    func teleport(
+        to coordinate: CLLocationCoordinate2D,
+        pairing: PairingStore,
+        recentName: String? = nil
+    ) {
         guard pairing.hasPairingFile else {
             lastError = LocusLocalization.string("Import an RPPairing file in Settings first.")
             return
         }
         pin = coordinate
-        apply(coordinate, pairing: pairing, markRecent: true)
+        apply(coordinate, pairing: pairing, markRecent: true, recentName: recentName)
     }
 
     func stop(pairing: PairingStore) {
@@ -244,7 +248,8 @@ final class SpoofSession: ObservableObject {
         let place = SavedPlace(
             name: trimmed.isEmpty ? Self.coordinateLabel(coordinate) : trimmed,
             latitude: coordinate.latitude,
-            longitude: coordinate.longitude
+            longitude: coordinate.longitude,
+            coordinateReference: SavedPlace.reference(forMapCoordinate: coordinate, mode: .current)
         )
         // Don't let a generic star overwrite a named favorite for the same spot.
         if let existing = favorites.first(where: { $0.id == place.id }),
@@ -309,7 +314,12 @@ final class SpoofSession: ObservableObject {
         return false
     }
 
-    private func apply(_ coordinate: CLLocationCoordinate2D, pairing: PairingStore, markRecent: Bool) {
+    private func apply(
+        _ coordinate: CLLocationCoordinate2D,
+        pairing: PairingStore,
+        markRecent: Bool,
+        recentName: String? = nil
+    ) {
         if status == .idle || status.isDropped {
             status = .connecting
         }
@@ -332,7 +342,11 @@ final class SpoofSession: ObservableObject {
             startResend(pairing: pairing)
             startHealth(pairing: pairing)
             if markRecent {
-                pushRecent(coordinate)
+                if let recentName, !recentName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    pushNamedRecent(name: recentName, coordinate: coordinate)
+                } else {
+                    pushRecent(coordinate)
+                }
             }
         case .failure(let error):
             lastError = error.localizedDescription
@@ -411,7 +425,8 @@ final class SpoofSession: ObservableObject {
         let place = SavedPlace(
             name: trimmed.isEmpty ? Self.coordinateLabel(coordinate) : trimmed,
             latitude: coordinate.latitude,
-            longitude: coordinate.longitude
+            longitude: coordinate.longitude,
+            coordinateReference: SavedPlace.reference(forMapCoordinate: coordinate, mode: .current)
         )
         recents.removeAll {
             abs($0.latitude - place.latitude) < 0.00015 && abs($0.longitude - place.longitude) < 0.00015
