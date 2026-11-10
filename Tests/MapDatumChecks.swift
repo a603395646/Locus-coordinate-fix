@@ -126,6 +126,9 @@ struct MapDatumChecks {
         assert(abs(exportedWLoc[0].longitude - chongqingWGS84.longitude) < 0.000001)
         assert(exportedWLoc[0].accuracyMeters == 42)
         assert(exportedWLoc[0].randomRadiusMeters == 60)
+        let exportedWLocObject = try! JSONSerialization.jsonObject(with: Data(exportedWLocJSON.utf8)) as! [String: Any]
+        assert((exportedWLocObject["accuracy"] as? NSNumber)?.doubleValue == 42)
+        assert((exportedWLocObject["randomRadius"] as? NSNumber)?.doubleValue == 60)
 
         // Favorites and recents preserve the coordinate datum across map-mode changes.
         let savedGCJPlace = SavedPlace(
@@ -168,6 +171,15 @@ struct MapDatumChecks {
             longitude: activatedRadiusCoordinate.longitude
         ))
         assert(radiusDistance <= 75.1)
+        let unchangedRadiusCoordinate = WLocProfile.randomizedMapCoordinate(chongqingWGS84, radiusMeters: 0)
+        assert(unchangedRadiusCoordinate.latitude == chongqingWGS84.latitude)
+        assert(unchangedRadiusCoordinate.longitude == chongqingWGS84.longitude)
+        for _ in 0..<256 {
+            let sample = WLocProfile.randomizedMapCoordinate(chongqingWGS84, radiusMeters: 75)
+            let distance = CLLocation(latitude: chongqingWGS84.latitude, longitude: chongqingWGS84.longitude)
+                .distance(from: CLLocation(latitude: sample.latitude, longitude: sample.longitude))
+            assert(distance <= 75.1)
+        }
 
         let invalidGCJProfile = WLocProfile(
             name: "Invalid Hong Kong GCJ profile",
