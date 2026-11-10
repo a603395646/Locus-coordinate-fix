@@ -46,7 +46,7 @@ struct WLocProfilesView: View {
                 }
                 .disabled(session.pin == nil || profileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             } footer: {
-                Text("Profiles are stored locally on this iPhone. Saving a pin records its current map coordinate reference; it does not change the device location by itself. Accuracy is retained as WLOC metadata; random radius is applied once when activated.")
+                Text("Profiles are stored locally on this iPhone. Saving a pin records its current map coordinate reference; it does not change the device location by itself. The WLOC accuracy value is preserved for export compatibility only; the current Apple DVT engine cannot set horizontal accuracy. Random radius is applied once before each activation.")
             }
 
             Section {
@@ -99,7 +99,7 @@ struct WLocProfilesView: View {
                                 .font(.system(.caption, design: .monospaced))
                                 .foregroundStyle(.secondary)
                             HStack(spacing: 12) {
-                                Text("Accuracy metadata: \(Int(profile.accuracyMeters)) m")
+                                Text("WLOC accuracy (export only): \(Int(profile.accuracyMeters)) m")
                                 if profile.randomRadiusMeters > 0 {
                                     Text("Radius: \(Int(profile.randomRadiusMeters)) m")
                                 }
@@ -235,7 +235,7 @@ struct WLocProfilesView: View {
                 LabeledContent("Storage") { Text("On this device") }
                 LabeledContent("Format") { Text("Locus v1 / WLOC settings") }
                 LabeledContent("Network access") { Text("Not required for profile storage") }
-                Text("Accuracy is retained as WLOC metadata; the current DVT location engine applies coordinates but does not set horizontal accuracy. A random radius is applied once when a profile is activated to avoid continuous location jitter.")
+                Text("The current Apple DVT API accepts latitude and longitude only. It cannot set horizontal or vertical accuracy, altitude, speed, or course. WLOC accuracy is preserved for import/export compatibility only; random radius is applied once to the target coordinate before activation.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Text("Profiles are stored locally. They do not configure a VPN, install certificates, or modify network responses.")
@@ -440,7 +440,7 @@ struct WLocProfilesView: View {
             }
             profiles.append(contentsOf: additions)
             WLocProfile.save(profiles)
-            importMessage = LocusLocalization.string("Imported \(additions.count) profile(s). WLOC accuracy is retained as metadata; Locus applies the saved coordinate.")
+            importMessage = LocusLocalization.string("Imported \(additions.count) profile(s). WLOC accuracy is preserved for export compatibility only; DVT applies coordinates only.")
         } catch {
             importMessage = LocusLocalization.string("Import failed: \(error.localizedDescription)")
         }
@@ -488,7 +488,7 @@ private struct WLocProfileEditorView: View {
                 }
 
                 Section {
-                    Text("Accuracy is preserved for WLOC compatibility. The current DVT engine applies the coordinate only; random radius is applied once when the profile is activated.")
+                    Text("The WLOC accuracy value is preserved for export compatibility only. Apple DVT applies coordinates but does not accept a horizontal-accuracy value. Random radius is applied once before activation.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
