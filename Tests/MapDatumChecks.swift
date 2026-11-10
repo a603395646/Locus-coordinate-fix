@@ -127,6 +127,48 @@ struct MapDatumChecks {
         assert(exportedWLoc[0].accuracyMeters == 42)
         assert(exportedWLoc[0].randomRadiusMeters == 60)
 
+        // Favorites and recents preserve the coordinate datum across map-mode changes.
+        let savedGCJPlace = SavedPlace(
+            name: "Chongqing favorite",
+            latitude: chongqingGCJ02.latitude,
+            longitude: chongqingGCJ02.longitude,
+            coordinateReference: "GCJ-02"
+        )
+        let savedPlaceOnChinaMap = savedGCJPlace.mapCoordinate(for: .automaticChina)
+        assert(abs(savedPlaceOnChinaMap.latitude - chongqingGCJ02.latitude) < 0.0000001)
+        let savedPlaceOutsideChinaMode = savedGCJPlace.mapCoordinate(for: .off)
+        assert(abs(savedPlaceOutsideChinaMode.latitude - chongqingWGS84.latitude) < 0.000001)
+        assert(abs(savedPlaceOutsideChinaMode.longitude - chongqingWGS84.longitude) < 0.000001)
+
+        let legacySavedPlaceJSON = """
+        { "name": "Legacy favorite", "latitude": 29.56301, "longitude": 106.55156 }
+        """
+        let legacySavedPlace = try! JSONDecoder().decode(SavedPlace.self, from: Data(legacySavedPlaceJSON.utf8))
+        assert(legacySavedPlace.coordinateReference == nil)
+        let legacyCoordinate = legacySavedPlace.mapCoordinate(for: .off)
+        assert(legacyCoordinate.latitude == 29.56301)
+        assert(legacyCoordinate.longitude == 106.55156)
+
+        let profileFromFavorite = WLocProfile.fromSavedPlace(savedGCJPlace, mapMode: .off)
+        assert(profileFromFavorite.coordinateReference == "GCJ-02")
+        assert(abs(profileFromFavorite.mapCoordinate(for: .off).latitude - chongqingWGS84.latitude) < 0.000001)
+
+        let radiusProfile = WLocProfile(
+            name: "Radius test",
+            coordinate: chongqingWGS84,
+            coordinateReference: "WGS-84",
+            randomRadiusMeters: 75
+        )
+        let activatedRadiusCoordinate = radiusProfile.activationCoordinate(for: .off)
+        let radiusDistance = CLLocation(
+            latitude: chongqingWGS84.latitude,
+            longitude: chongqingWGS84.longitude
+        ).distance(from: CLLocation(
+            latitude: activatedRadiusCoordinate.latitude,
+            longitude: activatedRadiusCoordinate.longitude
+        ))
+        assert(radiusDistance <= 75.1)
+
         let invalidGCJProfile = WLocProfile(
             name: "Invalid Hong Kong GCJ profile",
             coordinate: CLLocationCoordinate2D(latitude: 22.284774, longitude: 114.159437),
