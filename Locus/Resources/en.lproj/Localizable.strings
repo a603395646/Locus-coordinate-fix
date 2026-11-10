@@ -4,8 +4,8 @@
 "About" = "About";
 "Accuracy is preserved for WLOC compatibility. The current DVT engine applies the coordinate only; random radius is applied once when the profile is activated." = "Accuracy is preserved for WLOC compatibility. The current DVT engine applies the coordinate only; random radius is applied once when the profile is activated.";
 "Accuracy is retained as WLOC metadata; the current DVT location engine applies coordinates but does not set horizontal accuracy. A random radius is applied once when a profile is activated to avoid continuous location jitter." = "Accuracy is retained as WLOC metadata; the current DVT location engine applies coordinates but does not set horizontal accuracy. A random radius is applied once when a profile is activated to avoid continuous location jitter.";
-"Accuracy metadata" = "Accuracy metadata";
-"Accuracy metadata: %lld m" = "Accuracy metadata: %lld m";
+"WLOC accuracy (export only)" = "Accuracy metadata";
+"WLOC accuracy (export only): %lld m" = "Accuracy metadata: %lld m";
 "Active" = "Active";
 "AirDrop / Share into Locus, or copy the plist text." = "AirDrop / Share into Locus, or copy the plist text.";
 "Allow notifications — the code can appear as a banner over Settings." = "Allow notifications — the code can appear as a banner over Settings.";
@@ -99,7 +99,7 @@
 "Import an RPPairing file in Settings first." = "Import an RPPairing file in Settings first.";
 "Import failed: %@" = "Import failed: %@";
 "Import pairing file" = "Import pairing file";
-"Imported %lld profile(s). WLOC accuracy is retained as metadata; Locus applies the saved coordinate." = "Imported %lld profile(s). WLOC accuracy is retained as metadata; Locus applies the saved coordinate.";
+"Imported %lld profile(s). WLOC accuracy is preserved for export compatibility only; DVT applies coordinates only." = "Imported %lld profile(s). WLOC accuracy is retained as metadata; Locus applies the saved coordinate.";
 "In Developer Mode tap Pair with Locus → Pair." = "In Developer Mode tap Pair with Locus → Pair.";
 "Inactive" = "Inactive";
 "Install" = "Install";
@@ -290,3 +290,13 @@
 "WLOC Profiles" = "WLOC Profiles";
 "WLOC profiles appear here after you save a place." = "WLOC profiles appear here after you save a place.";
 "Legacy coordinate" = "Legacy coordinate";
+"Engine capabilities" = "Engine capabilities";
+"Apple DVT" = "Apple DVT";
+"Latitude and longitude only" = "Latitude and longitude only";
+"Not configurable through this API" = "Not configurable through this API";
+"The current Apple DVT API accepts latitude and longitude only. It cannot set horizontal or vertical accuracy, altitude, speed, or course. WLOC accuracy is preserved for import/export compatibility only; random radius is applied once to the target coordinate before activation." = "The current Apple DVT API accepts latitude and longitude only. It cannot set horizontal or vertical accuracy, altitude, speed, or course. WLOC accuracy is preserved for import/export compatibility only; random radius is applied once to the target coordinate before activation.";
+"The WLOC accuracy value is preserved for export compatibility only. Apple DVT applies coordinates but does not accept a horizontal-accuracy value. Random radius is applied once before activation." = "The WLOC accuracy value is preserved for export compatibility only. Apple DVT applies coordinates but does not accept a horizontal-accuracy value. Random radius is applied once before activation.";
+"The fix-quality values below are reported by Locus's own Core Location manager. They are not accuracy values injected by DVT and do not prove what another app receives." = "The fix-quality values below are reported by Locus's own Core Location manager. They are not accuracy values injected by DVT and do not prove what another app receives.";
+"Location API" = "Location API";
+"Settable fields" = "Settable fields";
+"Altitude and motion" = "Altitude and motion";
