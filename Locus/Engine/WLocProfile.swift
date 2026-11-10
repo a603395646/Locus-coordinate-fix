@@ -50,6 +50,37 @@ struct WLocProfile: Identifiable, Codable, Equatable {
         }
     }
 
+    /// Applies WLOC's random radius once, then returns a stable map coordinate for this activation.
+    func activationCoordinate(for mode: MapDatumMode) -> CLLocationCoordinate2D {
+        Self.randomizedMapCoordinate(mapCoordinate(for: mode), radiusMeters: randomRadiusMeters)
+    }
+
+    static func randomizedMapCoordinate(
+        _ coordinate: CLLocationCoordinate2D,
+        radiusMeters: Double
+    ) -> CLLocationCoordinate2D {
+        guard radiusMeters.isFinite, radiusMeters > 0 else { return coordinate }
+        let distance = sqrt(Double.random(in: 0...1)) * radiusMeters
+        let angle = Double.random(in: 0..<(2 * Double.pi))
+        let northMeters = cos(angle) * distance
+        let eastMeters = sin(angle) * distance
+        let latitude = coordinate.latitude + northMeters / 111_320
+        let longitudeScale = max(0.01, abs(cos(coordinate.latitude * .pi / 180)))
+        let longitude = coordinate.longitude + eastMeters / (111_320 * longitudeScale)
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+
+    /// Converts an existing favorite/recent entry into a WLOC profile without losing its map datum.
+    static func fromSavedPlace(_ place: SavedPlace, mapMode: MapDatumMode) -> WLocProfile {
+        let reference = place.coordinateReference
+            ?? SavedPlace.reference(forMapCoordinate: place.coordinate, mode: mapMode)
+        return WLocProfile(
+            name: place.name,
+            coordinate: place.coordinate,
+            coordinateReference: reference
+        )
+    }
+
     init(
         id: UUID = UUID(),
         name: String,
