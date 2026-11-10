@@ -4,8 +4,8 @@
 "About" = "关于";
 "Accuracy is preserved for WLOC compatibility. The current DVT engine applies the coordinate only; random radius is applied once when the profile is activated." = "精度参数会作为 WLOC 兼容信息保留。当前 DVT 引擎仅应用坐标；启用配置时会应用一次随机半径。";
 "Accuracy is retained as WLOC metadata; the current DVT location engine applies coordinates but does not set horizontal accuracy. A random radius is applied once when a profile is activated to avoid continuous location jitter." = "精度参数仅作为 WLOC 元数据保存；当前 DVT 定位引擎只应用坐标，不会设置水平精度。随机半径会在启用配置时应用一次，避免位置持续抖动。";
-"Accuracy metadata" = "精度参数（元数据）";
-"Accuracy metadata: %lld m" = "精度参数：%lld 米";
+"WLOC accuracy (export only)" = "精度参数（元数据）";
+"WLOC accuracy (export only): %lld m" = "精度参数：%lld 米";
 "Active" = "运行中";
 "AirDrop / Share into Locus, or copy the plist text." = "通过 AirDrop / 分享将文件发送到 Locus，或复制 plist 文本。";
 "Allow notifications — the code can appear as a banner over Settings." = "请允许通知，这样验证码可以作为横幅显示在系统设置上方。";
@@ -102,7 +102,7 @@
 "Import Locus / WLOC JSON" = "导入 Locus / WLOC JSON";
 "Import pairing file" = "导入配对文件";
 "Import RPPairing file…" = "导入 RPPairing 文件…";
-"Imported %lld profile(s). WLOC accuracy is retained as metadata; Locus applies the saved coordinate." = "已导入 %lld 个配置。WLOC 精度仅作为元数据保存；Locus 会应用已保存的坐标。";
+"Imported %lld profile(s). WLOC accuracy is preserved for export compatibility only; DVT applies coordinates only." = "已导入 %lld 个配置。WLOC 精度仅作为元数据保存；Locus 会应用已保存的坐标。";
 "In Developer Mode tap Pair with Locus → Pair." = "在开发者模式中点击“与 Locus 配对 → 配对”。";
 "Inactive" = "未运行";
 "Install" = "安装";
@@ -290,3 +290,13 @@
 "WLOC Profiles" = "WLOC 配置";
 "WLOC profiles appear here after you save a place." = "保存地点后，WLOC 配置会显示在这里。";
 "Legacy coordinate" = "旧版坐标";
+"Engine capabilities" = "引擎能力";
+"Apple DVT" = "Apple DVT";
+"Latitude and longitude only" = "仅支持纬度和经度";
+"Not configurable through this API" = "此接口不支持设置";
+"The current Apple DVT API accepts latitude and longitude only. It cannot set horizontal or vertical accuracy, altitude, speed, or course. WLOC accuracy is preserved for import/export compatibility only; random radius is applied once to the target coordinate before activation." = "当前 Apple DVT 接口只接受纬度和经度，无法设置水平精度、垂直精度、海拔、速度或航向。WLOC 精度仅为导入/导出兼容而保留；随机半径会在每次启用前应用一次。";
+"The WLOC accuracy value is preserved for export compatibility only. Apple DVT applies coordinates but does not accept a horizontal-accuracy value. Random radius is applied once before activation." = "WLOC 精度值仅为导出兼容而保留。Apple DVT 只应用坐标，不接受水平精度参数。随机半径会在启用前应用一次。";
+"The fix-quality values below are reported by Locus's own Core Location manager. They are not accuracy values injected by DVT and do not prove what another app receives." = "以下定位质量数值来自 Locus 自身的 Core Location 管理器，并非 DVT 注入的精度值，也不能证明其他 App 实际收到的定位数据。";
+"Location API" = "定位接口";
+"Settable fields" = "可设置字段";
+"Altitude and motion" = "海拔与运动信息";
