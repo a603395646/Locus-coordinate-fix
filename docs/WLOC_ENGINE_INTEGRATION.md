@@ -41,15 +41,15 @@ Packet Tunnel distribution requires the Network Extensions entitlement and match
 6. The UI labels this as a network-location test path and clearly distinguishes it from DVT/GPS simulation.
 7. The user explicitly approves the signing/account setup before any certificate trust or VPN profile is installed.
 
-## Current physical-device status (2026-11-10)
+## Current physical-device status (2026-11-11)
 
-- Windows Desktop Commander is online and the iPhone is reachable over usbmux.
-- iOS 26.2.1 Developer Disk Image is mounted; the app's RPPairing file is present in its Documents container.
-- LocalDevVPN 1.3.0 was manually connected by the user. Its UI reports Connected, with interface address `10.7.1.1/32` and peer/device address `10.7.0.1/32`; the `TunnelProv` process is running.
-- Locus Fix Test currently installed on the phone remains version 1.0.2, build 8. The visible status bar still says `Connect LocalDevVPN`; this is not yet a confirmed tunnel failure because the latest Build 11, which adds periodic `getifaddrs` interface detection for the `10.7.*` utun address, is not installed.
-- The latest Build 11's interface-detection code should match the observed LocalDevVPN address, but that behavior still needs physical verification after installation.
+- Windows Desktop Commander is online; the iPhone is reachable over usbmux and its iOS 26.2.1 Developer Disk Image is mounted.
+- Locus Fix Test 1.0.5, build 11, is now signed and installed through the existing Sideloadly session. Its installed bundle ID is `com.chrismack.locus.coordinatefix.GBWFHXQS78`, matching the prior test app's bundle ID.
+- The previous Locus Fix Test data was retained: the RPPairing plist remains in Documents and `Library/Application Support/Pairing/rp_pairing_file.plist`.
+- LocalDevVPN 1.3.0 is connected. Its status page and Locus Settings both report Connected; the tunnel uses interface address `10.7.1.1/32` and peer/device address `10.7.0.1/32`. The `TunnelProv` process is running.
+- The freshly launched Build 11 map status bar still initially displays `Connect LocalDevVPN`, while the Settings page reports Connected. This points to a map status-bar refresh/state issue, not a disconnected VPN. The code's periodic `getifaddrs` detection needs a final UI refresh check and, if reproducible, a small state-refresh fix.
+- The app is launchable on the physical iPhone. The DVT teleport path has not yet been confirmed in this session; a controlled map-pin teleport and restore test remains outstanding.
 - iOS 26.2.1 does not support the CoreDevice Universal HID tap command in the installed host tooling, and Safari Web Inspector is disabled. The user completed the VPN Connect action manually.
-- This Windows host currently has no valid Apple signing identity/private key or provisioning profile. The certificate store has no valid private-key identity; no `.p12`, `.pfx`, or `.mobileprovision` files were found in the usual user folders. Build 11 remains unsigned and cannot be installed from this host until a valid signing route is supplied.
 
 ## Build 11
 
@@ -58,4 +58,5 @@ Packet Tunnel distribution requires the Network Extensions entitlement and match
 - Coordinate/WLOC tests: passed.
 - Unsigned iOS Release build: passed.
 - IPA packaging and artifact upload: passed.
-- The artifact's Info.plist was verified: bundle ID `com.chrismack.locus.coordinatefix`, version `1.0.5`, build `11`; no embedded provisioning profile or extension is present.
+- The CI artifact's Info.plist was verified: bundle ID `com.chrismack.locus.coordinatefix`, version `1.0.5`, build `11`.
+- Sideloadly successfully signed and installed Build 11 using the existing Apple ID session. No paid developer membership was required for this app build.
