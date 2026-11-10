@@ -120,6 +120,16 @@ struct WLocProfilesView: View {
                                     Label("Map", systemImage: "map")
                                 }
                                 .buttonStyle(.borderless)
+                                Button {
+                                    session.addFavorite(
+                                        name: profile.name,
+                                        coordinate: profile.mapCoordinate(for: .current)
+                                    )
+                                } label: {
+                                    Image(systemName: "star")
+                                }
+                                .buttonStyle(.borderless)
+                                .accessibilityLabel("Add to Favorites")
                                 Spacer()
                                 if let wlocJSON = try? WLocProfile.exportWLOCJSON(profile) {
                                     ShareLink(item: wlocJSON, subject: Text("WLOC settings")) {
@@ -153,6 +163,22 @@ struct WLocProfilesView: View {
                 }
             }
 
+
+            if !session.favorites.isEmpty {
+                Section("Import from Favorites") {
+                    ForEach(session.favorites) { place in
+                        importPlaceRow(place)
+                    }
+                }
+            }
+
+            if !session.recents.isEmpty {
+                Section("Import from Recents") {
+                    ForEach(session.recents) { place in
+                        importPlaceRow(place)
+                    }
+                }
+            }
 
             Section("Device location") {
                 LabeledContent("Status") {
@@ -271,9 +297,8 @@ struct WLocProfilesView: View {
                 WLocProfile.save(profiles)
             }
 
-            let base = profile.mapCoordinate(for: MapDatumMode.current)
-            let coordinate = randomizedCoordinate(base, radiusMeters: profile.randomRadiusMeters)
-            session.teleport(to: coordinate, pairing: pairing)
+            let coordinate = profile.activationCoordinate(for: .current)
+            session.teleport(to: coordinate, pairing: pairing, recentName: profile.name)
             guard session.isSpoofing else {
                 actionError = session.lastError ?? LocusLocalization.string("Could not apply this location. Check the device connection.")
                 return
@@ -298,9 +323,8 @@ struct WLocProfilesView: View {
             return
         }
 
-        let base = profile.mapCoordinate(for: MapDatumMode.current)
-        let coordinate = randomizedCoordinate(base, radiusMeters: profile.randomRadiusMeters)
-        session.teleport(to: coordinate, pairing: pairing)
+        let coordinate = profile.activationCoordinate(for: .current)
+        session.teleport(to: coordinate, pairing: pairing, recentName: profile.name)
         guard session.isSpoofing else {
             actionError = session.lastError ?? LocusLocalization.string("Could not apply this location. Check the device connection.")
             return
@@ -318,19 +342,50 @@ struct WLocProfilesView: View {
         onRestore()
     }
 
-    private func randomizedCoordinate(
-        _ coordinate: CLLocationCoordinate2D,
-        radiusMeters: Double
-    ) -> CLLocationCoordinate2D {
-        guard radiusMeters > 0 else { return coordinate }
-        let distance = sqrt(Double.random(in: 0...1)) * radiusMeters
-        let angle = Double.random(in: 0..<(2 * Double.pi))
-        let northMeters = cos(angle) * distance
-        let eastMeters = sin(angle) * distance
-        let latitude = coordinate.latitude + northMeters / 111_320
-        let longitudeScale = max(0.01, abs(cos(coordinate.latitude * .pi / 180)))
-        let longitude = coordinate.longitude + eastMeters / (111_320 * longitudeScale)
-        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    private func importPlaceRow(_ place: SavedPlace) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(place.name)
+                Text(LocalizedStringKey(place.coordinateReference ?? "Legacy coordinate"))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                saveAsProfile(place)
+            } label: {
+                Label("Save as WLOC profile", systemImage: "plus.circle")
+                    .labelStyle(.iconOnly)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Save as WLOC profile")
+            .disabled(isAlreadySavedAsProfile(place))
+        }
+    }
+
+    private func isAlreadySavedAsProfile(_ place: SavedPlace) -> Bool {
+        let candidate = WLocProfile.fromSavedPlace(place, mapMode: .current)
+        let coordinate = candidate.mapCoordinate(for: .current)
+        let target = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        return profiles.contains { existing in
+            let existingCoordinate = existing.mapCoordinate(for: .current)
+            return target.distance(from: CLLocation(
+                latitude: existingCoordinate.latitude,
+                longitude: existingCoordinate.longitude
+            )) < 2
+        }
+    }
+
+    private func saveAsProfile(_ place: SavedPlace) {
+        guard !isAlreadySavedAsProfile(place) else {
+            importMessage = LocusLocalization.string("Already saved as a profile.")
+            return
+        }
+        let profile = WLocProfile.fromSavedPlace(place, mapMode: .current)
+        guard profile.isValid else { return }
+        profiles.insert(profile, at: 0)
+        WLocProfile.save(profiles)
+        importMessage = LocusLocalization.string("Saved as a WLOC profile.")
     }
 
     private func saveCurrentPin() {
