@@ -438,9 +438,19 @@ private struct LocationDiagnosticsView: View {
                         Text(LocalizedStringKey(LocationEngine.isSessionActive ? "Active" : "Inactive"))
                     }
                     LabeledContent("Session") {
-                    Text(session.status.label)
-                }
+                        Text(session.status.label)
+                    }
                     LabeledContent("Coordinate mode", value: MapDatumMode.current.title)
+                }
+
+                Section("Engine capabilities") {
+                    LabeledContent("Location API", value: "Apple DVT")
+                    LabeledContent("Settable fields", value: "Latitude and longitude only")
+                    LabeledContent("Horizontal accuracy", value: "Not configurable through this API")
+                    LabeledContent("Altitude and motion", value: "Not configurable through this API")
+                    Text("The fix-quality values below are reported by Locus's own Core Location manager. They are not accuracy values injected by DVT and do not prove what another app receives.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("Coordinates") {
