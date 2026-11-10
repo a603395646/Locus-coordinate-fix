@@ -230,6 +230,26 @@ struct PlacesView: View {
 
     @State private var placeToRename: SavedPlace?
     @State private var renameText = ""
+    @State private var actionError: String?
+    @State private var profiles: [WLocProfile] = WLocProfile.load()
+
+    private var alertPresented: Binding<Bool> {
+        Binding(
+            get: { placeToRename != nil || actionError != nil },
+            set: {
+                if !$0 {
+                    placeToRename = nil
+                    actionError = nil
+                }
+            }
+        )
+    }
+
+    private var alertTitle: String {
+        actionError == nil
+            ? LocusLocalization.string("Rename Favorite")
+            : LocusLocalization.string("Locus")
+    }
 
     var body: some View {
         NavigationStack {
@@ -274,6 +294,50 @@ struct PlacesView: View {
                             }
                     }
                 }
+
+                Section("WLOC Profiles") {
+                    if profiles.isEmpty {
+                        Text("WLOC profiles appear here after you save a place.")
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(profiles) { profile in
+                        HStack(spacing: 12) {
+                            Button {
+                                activate(profile)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(profile.name)
+                                        .foregroundStyle(.primary)
+                                    Text("\(profile.coordinateReference) · \(String(format: "%.5f, %.5f", profile.latitude, profile.longitude))")
+                                        .font(.caption.monospaced())
+                                        .foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+
+                            Button {
+                                session.addFavorite(
+                                    name: profile.name,
+                                    coordinate: profile.mapCoordinate(for: .current)
+                                )
+                            } label: {
+                                Image(systemName: "star")
+                            }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel("Add to Favorites")
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                profiles.removeAll { $0.id == profile.id }
+                                WLocProfile.save(profiles)
+                            } label: {
+                                Label("Delete", systemImage: "trash.fill")
+                            }
+                        }
+                    }
+                }
             }
             .navigationTitle("Places")
             .toolbar {
@@ -281,29 +345,49 @@ struct PlacesView: View {
                     Button("Done") { dismiss() }
                 }
             }
-            .alert("Rename Favorite", isPresented: Binding(
-                get: { placeToRename != nil },
-                set: { if !$0 { placeToRename = nil } }
-            )) {
-                TextField("Name", text: $renameText)
-                Button("Cancel", role: .cancel) {
-                    placeToRename = nil
-                }
-                Button("Save") {
-                    if let place = placeToRename {
-                        session.renameFavorite(place, to: renameText)
+            .onAppear {
+                profiles = WLocProfile.load()
+            }
+            .alert(alertTitle, isPresented: alertPresented) {
+                if placeToRename != nil {
+                    TextField("Name", text: $renameText)
+                    Button("Cancel", role: .cancel) {
+                        placeToRename = nil
                     }
-                    placeToRename = nil
+                    Button("Save") {
+                        if let place = placeToRename {
+                            session.renameFavorite(place, to: renameText)
+                        }
+                        placeToRename = nil
+                    }
+                } else {
+                    Button("OK", role: .cancel) {
+                        actionError = nil
+                    }
                 }
             } message: {
-                Text("Choose a name you’ll recognize later.")
+                if let actionError {
+                    Text(actionError)
+                } else {
+                    Text("Choose a name you’ll recognize later.")
+                }
             }
         }
     }
 
     private func placeButton(_ place: SavedPlace) -> some View {
         Button {
-            session.teleport(to: place.coordinate, pairing: pairing)
+            guard pairing.hasPairingFile else {
+                actionError = LocusLocalization.string("Import an RPPairing file in Settings first.")
+                return
+            }
+            let coordinate = place.mapCoordinate(for: .current)
+            session.teleport(to: coordinate, pairing: pairing, recentName: place.name)
+            guard session.isSpoofing else {
+                actionError = session.lastError ?? LocusLocalization.string("Could not apply this location. Check the device connection.")
+                return
+            }
+            session.requestMapFocus(coordinate)
             dismiss()
         } label: {
             VStack(alignment: .leading, spacing: 2) {
@@ -314,8 +398,22 @@ struct PlacesView: View {
             }
         }
     }
-}
 
+    private func activate(_ profile: WLocProfile) {
+        guard pairing.hasPairingFile else {
+            actionError = LocusLocalization.string("Import an RPPairing file in Settings first.")
+            return
+        }
+        let coordinate = profile.activationCoordinate(for: .current)
+        session.teleport(to: coordinate, pairing: pairing, recentName: profile.name)
+        guard session.isSpoofing else {
+            actionError = session.lastError ?? LocusLocalization.string("Could not apply this location. Check the device connection.")
+            return
+        }
+        session.requestMapFocus(coordinate)
+        dismiss()
+    }
+}
 
 private struct LocationDiagnosticsView: View {
     @ObservedObject var session: SpoofSession
