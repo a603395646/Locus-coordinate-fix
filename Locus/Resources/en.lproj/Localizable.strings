@@ -281,3 +281,12 @@
 "WGS-84" = "WGS-84";
 "GCJ-02" = "GCJ-02";
 "%@ s ago" = "%@ s ago";
+"Add to Favorites" = "Add to Favorites";
+"Save as WLOC profile" = "Save as WLOC profile";
+"Import from Favorites" = "Import from Favorites";
+"Import from Recents" = "Import from Recents";
+"Already saved as a profile." = "Already saved as a profile.";
+"Saved as a WLOC profile." = "Saved as a WLOC profile.";
+"WLOC Profiles" = "WLOC Profiles";
+"WLOC profiles appear here after you save a place." = "WLOC profiles appear here after you save a place.";
+"Legacy coordinate" = "Legacy coordinate";
