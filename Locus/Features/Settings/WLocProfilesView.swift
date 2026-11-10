@@ -30,7 +30,7 @@ struct WLocProfilesView: View {
                 TextField("Profile name", text: $profileName)
                     .textInputAutocapitalization(.words)
                 Stepper(value: $accuracyMeters, in: 1...10_000, step: 5) {
-                    LabeledContent("Accuracy metadata") {
+                    LabeledContent("WLOC accuracy (export only)") {
                         Text("\(Int(accuracyMeters)) m").monospacedDigit()
                     }
                 }
@@ -476,7 +476,7 @@ private struct WLocProfileEditorView: View {
 
                 Section("WLOC parameters") {
                     Stepper(value: $accuracyMeters, in: 1...10_000, step: 5) {
-                        LabeledContent("Accuracy metadata") {
+                        LabeledContent("WLOC accuracy (export only)") {
                             Text("\(Int(accuracyMeters)) m").monospacedDigit()
                         }
                     }
