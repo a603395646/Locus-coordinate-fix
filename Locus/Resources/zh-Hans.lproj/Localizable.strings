@@ -281,3 +281,12 @@
 "WGS-84" = "WGS-84";
 "GCJ-02" = "GCJ-02";
 "%@ s ago" = "%@ 秒前";
+"Add to Favorites" = "加入收藏";
+"Save as WLOC profile" = "保存为 WLOC 配置";
+"Import from Favorites" = "从收藏夹导入";
+"Import from Recents" = "从最近使用导入";
+"Already saved as a profile." = "该地点已保存为配置。";
+"Saved as a WLOC profile." = "已保存为 WLOC 配置。";
+"WLOC Profiles" = "WLOC 配置";
+"WLOC profiles appear here after you save a place." = "保存地点后，WLOC 配置会显示在这里。";
+"Legacy coordinate" = "旧版坐标";
