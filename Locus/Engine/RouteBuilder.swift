@@ -17,7 +17,7 @@ enum RouteBuilder {
         let directions = MKDirections(request: request)
         let response = try await directions.calculate()
         guard let route = response.routes.first else {
-            throw NSError(domain: "Locus", code: 1, userInfo: [NSLocalizedDescriptionKey: "No route found"])
+            throw NSError(domain: "Locus", code: 1, userInfo: [NSLocalizedDescriptionKey: LocusLocalization.string("No route found")])
         }
         return sample(polyline: route.polyline, every: 12)
     }
@@ -79,17 +79,18 @@ enum GPXCodec {
             }
         }
         guard !coords.isEmpty else {
-            throw NSError(domain: "Locus", code: 2, userInfo: [NSLocalizedDescriptionKey: "No track points found in GPX"])
+            throw NSError(domain: "Locus", code: 2, userInfo: [NSLocalizedDescriptionKey: LocusLocalization.string("No track points found in GPX")])
         }
         return coords
     }
 
-    static func export(_ coordinates: [CLLocationCoordinate2D], name: String = "Locus Route") -> String {
+    static func export(_ coordinates: [CLLocationCoordinate2D], name: String? = nil) -> String {
+        let trackName = name ?? LocusLocalization.string("Locus Route")
         var body = """
         <?xml version="1.0" encoding="UTF-8"?>
         <gpx version="1.1" creator="Locus" xmlns="http://www.topografix.com/GPX/1/1">
           <trk>
-            <name>\(name)</name>
+            <name>\(trackName)</name>
             <trkseg>
 
         """
