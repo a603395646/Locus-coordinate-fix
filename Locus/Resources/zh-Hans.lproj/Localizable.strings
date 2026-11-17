@@ -300,3 +300,14 @@
 "Location API" = "定位接口";
 "Settable fields" = "可设置字段";
 "Altitude and motion" = "海拔与运动信息";
+
+"CoreDeviceProxy pairing" = "CoreDeviceProxy 配对记录";
+"Installed" = "已安装";
+"Missing" = "缺失";
+"Device IP (LocalDevVPN)" = "设备 IP（LocalDevVPN）";
+"Save Device IP" = "保存设备 IP";
+"Import an RPPairing file from idevice_pair (not a SideStore lockdown .mobiledevicepairing). On iOS 18–26.3, Locus also needs a classic Lockdown pairing record from a trusted computer; it is stored separately. If the file picker fails (common in LiveContainer), enable Fix File Picker on the app, share the file into LiveContainer → Locus, or copy the plist and use Paste." = "请从 idevice_pair 导入 RPPairing 文件（不是 SideStore lockdown .mobiledevicepairing）。iOS 18–26.3 还需要一份来自已信任电脑的经典 Lockdown 配对记录，该记录单独存储。若文件选择器不可用（LiveContainer 中较常见），请启用 Fix File Picker，将文件分享至 LiveContainer → Locus，或复制 plist 后使用“粘贴”。";
+"Connect LocalDevVPN before teleporting. The Device IP is 10.7.0.1 by default (not the Tunnel IP 10.7.1.1). Start a spoof on Wi‑Fi first; it can keep working on cellular afterward." = "传送前请先连接 LocalDevVPN。默认 Device IP 为 10.7.0.1（不是 Tunnel IP 10.7.1.1）。首次请先在 Wi‑Fi 下启动位置模拟，之后可继续使用蜂窝网络。";
+"Could not open the Apple developer tunnel. Check LocalDevVPN and the pairing record." = "无法打开 Apple 开发者隧道。请检查 LocalDevVPN 和配对记录。";
+"Device IP is invalid. Check Settings → Device IP (usually 10.7.0.1)." = "设备 IP 无效。请检查“设置 → 设备 IP”（通常为 10.7.0.1）。";
+"This iOS version needs a classic Lockdown pairing record for CoreDeviceProxy. The existing RPPairing file alone is not enough. Import the trusted computer pairing record into Locus, then try again." = "此 iOS 版本需要经典 Lockdown 配对记录以使用 CoreDeviceProxy。仅有现有 RPPairing 文件还不够。请将已信任电脑的配对记录导入 Locus，然后重试。";
