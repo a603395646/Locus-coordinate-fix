@@ -112,7 +112,7 @@ struct PairOnDeviceView: View {
                 .foregroundStyle(.black)
                 .frame(width: 22, height: 22)
                 .background(LocusTheme.accent, in: Circle())
-            Text(text)
+            Text(LocalizedStringKey(text))
                 .font(.subheadline)
                 .foregroundStyle(.primary)
         }
@@ -174,9 +174,9 @@ struct PairOnDeviceView: View {
                     .foregroundStyle(LocusTheme.statusGood)
                 Text("Paired")
                     .font(.title3.weight(.bold))
-                Text(mode == .embedded
+                Text(LocalizedStringKey(mode == .embedded
                      ? "Next we’ll set up LocalDevVPN."
-                     : "RPPairing file saved. Connect LocalDevVPN, then teleport.")
+                     : "RPPairing file saved. Connect LocalDevVPN, then teleport."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -186,7 +186,7 @@ struct PairOnDeviceView: View {
                     .foregroundStyle(LocusTheme.statusWarn)
                 Text("Pairing failed")
                     .font(.title3.weight(.bold))
-                Text(message)
+                Text(LocalizedStringKey(message))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -205,7 +205,7 @@ struct PairOnDeviceView: View {
                 host.acknowledgeFailure()
                 host.start(pairingStore: pairing)
             } label: {
-                Text(host.phase == .idle ? "Start pairing" : "Try again")
+                Text(LocalizedStringKey(host.phase == .idle ? "Start pairing" : "Try again"))
                     .font(.headline)
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
@@ -222,7 +222,7 @@ struct PairOnDeviceView: View {
                     dismiss()
                 }
             } label: {
-                Text(mode == .embedded ? "Continue" : "Done")
+                Text(LocalizedStringKey(mode == .embedded ? "Continue" : "Done"))
                     .font(.headline)
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
@@ -232,13 +232,13 @@ struct PairOnDeviceView: View {
             }
             .buttonStyle(.plain)
         case .advertising, .deviceConnected, .awaitingPIN:
-            Text({
+            Text(LocalizedStringKey({
                 switch host.phase {
                 case .awaitingPIN: return "Type the code above into the second Settings prompt."
                 case .deviceConnected: return "Connected — code coming next."
                 default: return "Waiting for iOS to connect… don’t force-quit Locus."
                 }
-            }())
+            }()))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)

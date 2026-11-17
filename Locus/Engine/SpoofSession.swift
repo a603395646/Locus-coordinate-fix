@@ -11,10 +11,10 @@ enum TravelMode: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .walk: return "Walk"
-        case .run: return "Run"
-        case .cycle: return "Cycle"
-        case .drive: return "Drive"
+        case .walk: return LocusLocalization.string("Walk")
+        case .run: return LocusLocalization.string("Run")
+        case .cycle: return LocusLocalization.string("Cycle")
+        case .drive: return LocusLocalization.string("Drive")
         }
     }
 
@@ -54,11 +54,11 @@ enum SpoofStatus: Equatable {
 
     var label: String {
         switch self {
-        case .idle: return "Not Spoofing"
-        case .connecting: return "Starting…"
-        case .active: return "Spoofing"
-        case .reconnecting: return "Reconnecting…"
-        case .dropped: return "Interrupted"
+        case .idle: return LocusLocalization.string("Not Spoofing")
+        case .connecting: return LocusLocalization.string("Starting…")
+        case .active: return LocusLocalization.string("Spoofing")
+        case .reconnecting: return LocusLocalization.string("Reconnecting…")
+        case .dropped: return LocusLocalization.string("Interrupted")
         }
     }
 
@@ -73,6 +73,8 @@ final class SpoofSession: ObservableObject {
     @Published var status: SpoofStatus = .idle
     @Published var pin: CLLocationCoordinate2D?
     @Published var simulated: CLLocationCoordinate2D?
+    @Published private(set) var mapFocusCoordinate: CLLocationCoordinate2D?
+    @Published private(set) var mapFocusRequestID: UUID?
     @Published var travelMode: TravelMode = .walk
     @Published var mapStyleIndex: Int = 0
     @Published var lastError: String?
@@ -89,6 +91,8 @@ final class SpoofSession: ObservableObject {
     private var backgroundTask = UIBackgroundTaskIdentifier.invalid
     private var joystickVector: CGVector = .zero
     private let locationKeeper = BackgroundKeepAlive()
+    @Published private(set) var latestRealWGS84Coordinate: CLLocationCoordinate2D?
+    @Published private(set) var latestLocationSnapshot: LocationFixSnapshot?
 
     private let favoritesKey = "locus.favorites"
     private let recentsKey = "locus.recents"
@@ -96,6 +100,12 @@ final class SpoofSession: ObservableObject {
     init() {
         favorites = SavedPlace.load(key: favoritesKey)
         recents = SavedPlace.load(key: recentsKey)
+        locationKeeper.onCoordinateUpdate = { [weak self] coordinate in
+            self?.latestRealWGS84Coordinate = coordinate
+        }
+        locationKeeper.onDiagnosticsUpdate = { [weak self] snapshot in
+            self?.latestLocationSnapshot = snapshot
+        }
     }
 
     var isSpoofing: Bool {
@@ -104,13 +114,28 @@ final class SpoofSession: ObservableObject {
         return false
     }
 
-    func teleport(to coordinate: CLLocationCoordinate2D, pairing: PairingStore) {
+    func requestMapFocus(_ coordinate: CLLocationCoordinate2D) {
+        guard CLLocationCoordinate2DIsValid(coordinate) else { return }
+        mapFocusCoordinate = coordinate
+        mapFocusRequestID = UUID()
+    }
+
+    func clearMapFocusRequest() {
+        mapFocusCoordinate = nil
+        mapFocusRequestID = nil
+    }
+
+    func teleport(
+        to coordinate: CLLocationCoordinate2D,
+        pairing: PairingStore,
+        recentName: String? = nil
+    ) {
         guard pairing.hasPairingFile else {
-            lastError = "Import an RPPairing file in Settings first."
+            lastError = LocusLocalization.string("Import an RPPairing file in Settings first.")
             return
         }
         pin = coordinate
-        apply(coordinate, pairing: pairing, markRecent: true)
+        apply(coordinate, pairing: pairing, markRecent: true, recentName: recentName)
     }
 
     func stop(pairing: PairingStore) {
@@ -139,7 +164,8 @@ final class SpoofSession: ObservableObject {
 
     /// Best-known real device coordinate (not the teleport pin).
     var realCoordinate: CLLocationCoordinate2D? {
-        locationKeeper.lastKnownCoordinate
+        (latestRealWGS84Coordinate ?? locationKeeper.lastKnownCoordinate)
+            .map { MapDatumMode.current.mapCoordinate(fromWGS84: $0) }
     }
 
     /// Start lightweight GPS updates for the map puck / locate button.
@@ -152,9 +178,9 @@ final class SpoofSession: ObservableObject {
             lastError = "Import an RPPairing file in Settings first."
             return
         }
-        let start = simulated ?? pin ?? locationKeeper.lastKnownCoordinate
+        let start = simulated ?? pin ?? realCoordinate
         guard let start else {
-            lastError = "Drop a pin or teleport somewhere before using the joystick."
+            lastError = LocusLocalization.string("Drop a pin or teleport somewhere before using the joystick.")
             return
         }
         if simulated == nil {
@@ -222,7 +248,8 @@ final class SpoofSession: ObservableObject {
         let place = SavedPlace(
             name: trimmed.isEmpty ? Self.coordinateLabel(coordinate) : trimmed,
             latitude: coordinate.latitude,
-            longitude: coordinate.longitude
+            longitude: coordinate.longitude,
+            coordinateReference: SavedPlace.reference(forMapCoordinate: coordinate, mode: .current)
         )
         // Don't let a generic star overwrite a named favorite for the same spot.
         if let existing = favorites.first(where: { $0.id == place.id }),
@@ -276,7 +303,7 @@ final class SpoofSession: ObservableObject {
 
     private static func isGenericFavoriteName(_ name: String) -> Bool {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty || trimmed == "Favorite" { return true }
+        if trimmed.isEmpty || trimmed == LocusLocalization.string("Favorite") { return true }
         // Coordinate-looking labels from older teleports.
         let parts = trimmed.split(separator: ",")
         if parts.count == 2,
@@ -287,7 +314,12 @@ final class SpoofSession: ObservableObject {
         return false
     }
 
-    private func apply(_ coordinate: CLLocationCoordinate2D, pairing: PairingStore, markRecent: Bool) {
+    private func apply(
+        _ coordinate: CLLocationCoordinate2D,
+        pairing: PairingStore,
+        markRecent: Bool,
+        recentName: String? = nil
+    ) {
         if status == .idle || status.isDropped {
             status = .connecting
         }
@@ -310,7 +342,11 @@ final class SpoofSession: ObservableObject {
             startResend(pairing: pairing)
             startHealth(pairing: pairing)
             if markRecent {
-                pushRecent(coordinate)
+                if let recentName, !recentName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    pushNamedRecent(name: recentName, coordinate: coordinate)
+                } else {
+                    pushRecent(coordinate)
+                }
             }
         case .failure(let error):
             lastError = error.localizedDescription
@@ -389,7 +425,8 @@ final class SpoofSession: ObservableObject {
         let place = SavedPlace(
             name: trimmed.isEmpty ? Self.coordinateLabel(coordinate) : trimmed,
             latitude: coordinate.latitude,
-            longitude: coordinate.longitude
+            longitude: coordinate.longitude,
+            coordinateReference: SavedPlace.reference(forMapCoordinate: coordinate, mode: .current)
         )
         recents.removeAll {
             abs($0.latitude - place.latitude) < 0.00015 && abs($0.longitude - place.longitude) < 0.00015
@@ -415,7 +452,7 @@ final class SpoofSession: ObservableObject {
     private func postDropNotification(_ message: String) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
         let content = UNMutableNotificationContent()
-        content.title = "Locus spoof dropped"
+        content.title = LocusLocalization.string("Locus spoof dropped")
         content.body = message
         content.sound = .default
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)

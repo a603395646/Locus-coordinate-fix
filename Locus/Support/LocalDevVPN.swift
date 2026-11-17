@@ -6,23 +6,35 @@ enum LocalDevVPN {
     static let appStoreURL = URL(string: "https://apps.apple.com/us/app/localdevvpn/id6755608044")!
     static let detectURL = URL(string: "localdevvpn://")!
 
-    /// Starts the tunnel, then returns to Locus via `locus://`.
-    static let enableURL = URL(string: "localdevvpn://enable?scheme=locus")!
+    /// Starts the tunnel, then returns to Locus Fix Test via `locusfix://`.
+    static let enableURL = URL(string: "localdevvpn://enable?scheme=locusfix")!
 
     static var isInstalled: Bool {
         UIApplication.shared.canOpenURL(detectURL)
     }
 
-    /// LocalDevVPN puts the tunnel network on a `10.7.0.x` (or custom) utun when connected.
+    /// LocalDevVPN's target IP is the remote endpoint; the local utun may use
+    /// the adjacent address (for example, target 10.7.0.1 with tunnel IP 10.7.1.1).
     static var isConnected: Bool {
-        let addresses = ipv4InterfaceAddresses()
+        let interfaces = ipv4InterfaceAddresses()
+        let addresses = interfaces.map(\.address)
         let target = TunnelConfig.targetIP
         if addresses.contains(target) { return true }
 
         let parts = target.split(separator: ".")
         guard parts.count == 4 else { return false }
-        let prefix = parts.dropLast().joined(separator: ".") + "."
-        return addresses.contains { $0.hasPrefix(prefix) }
+
+        // Preserve support for tunnels that expose the target's /24 locally.
+        let targetPrefix = parts.dropLast().joined(separator: ".") + "."
+        if addresses.contains(where: { $0.hasPrefix(targetPrefix) }) { return true }
+
+        // LocalDevVPN reports its client-side address on a utun interface.
+        // Match the target's private network prefix rather than expecting the
+        // remote endpoint itself to appear as a local interface address.
+        let tunnelPrefix = parts.prefix(2).joined(separator: ".") + "."
+        return interfaces.contains {
+            $0.name.hasPrefix("utun") && $0.address.hasPrefix(tunnelPrefix)
+        }
     }
 
     static func openInstalled() {
@@ -42,12 +54,12 @@ enum LocalDevVPN {
         }
     }
 
-    private static func ipv4InterfaceAddresses() -> [String] {
+    private static func ipv4InterfaceAddresses() -> [(name: String, address: String)] {
         var ifaddr: UnsafeMutablePointer<ifaddrs>?
         guard getifaddrs(&ifaddr) == 0, let first = ifaddr else { return [] }
         defer { freeifaddrs(ifaddr) }
 
-        var results: [String] = []
+        var results: [(name: String, address: String)] = []
         var ptr: UnsafeMutablePointer<ifaddrs>? = first
         while let current = ptr {
             let interface = current.pointee
@@ -63,7 +75,10 @@ enum LocalDevVPN {
                     0,
                     NI_NUMERICHOST
                 ) == 0 {
-                    results.append(String(cString: host))
+                    results.append((
+                        name: String(cString: interface.ifa_name),
+                        address: String(cString: host)
+                    ))
                 }
             }
             ptr = interface.ifa_next

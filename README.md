@@ -17,8 +17,17 @@ Free and open-source iPhone location teleport. Tap the map, search a place, or d
 - Draw a path or import / export GPX
 - Background keep-alive + live status bar + drop alerts
 - Favorites & recents
+- WLOC-compatible location profiles with JSON import/export and one-time random-radius activation
 - First-run setup walkthrough
 - Fully on-device — no analytics, nothing uploaded
+
+## WLOC profile compatibility and engine limits
+
+Locus can store and exchange WLOC-compatible profile settings, including the requested accuracy value and random radius. The random radius is applied once to the target coordinate before each activation.
+
+The current Apple DVT location-simulation API used by Locus accepts latitude and longitude only. It does **not** accept horizontal/vertical accuracy, altitude, speed, or course values. The WLOC accuracy field is therefore preserved for profile import/export compatibility; it does not change the accuracy reported by Core Location in this DVT mode. The diagnostics screen reports the fix quality observed by Locus itself.
+
+A separate network-location testing engine is not included in this build. It would require a distinct Network Extension, certificate/trust setup, and device-side compatibility testing.
 
 ## Install
 

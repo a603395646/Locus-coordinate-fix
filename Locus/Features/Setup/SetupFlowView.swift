@@ -222,9 +222,9 @@ struct SetupFlowView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Connect this iPhone")
                     .font(.title.weight(.bold))
-                Text(supportsOnDevicePairing
+                Text(LocalizedStringKey(supportsOnDevicePairing
                      ? "Locus needs a one-time pairing so it can set your location. You’ll confirm a short code in Settings."
-                     : "Import a pairing file from your computer — Locus uses it to set your location securely on this device.")
+                     : "Import a pairing file from your computer — Locus uses it to set your location securely on this device."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -288,7 +288,7 @@ struct SetupFlowView: View {
                 .foregroundStyle(.black)
                 .frame(width: 22, height: 22)
                 .background(LocusTheme.accent, in: Circle())
-            Text(text)
+            Text(LocalizedStringKey(text))
                 .font(.subheadline)
                 .foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -307,12 +307,12 @@ struct SetupFlowView: View {
                     .foregroundStyle(LocusTheme.accent)
 
                 VStack(spacing: 10) {
-                    Text(localDevVPNInstalled ? "Connect LocalDevVPN" : "One more app")
+                    Text(LocalizedStringKey(localDevVPNInstalled ? "Connect LocalDevVPN" : "One more app"))
                         .font(.title.weight(.bold))
 
-                    Text(localDevVPNInstalled
+                    Text(LocalizedStringKey(localDevVPNInstalled
                          ? "LocalDevVPN is installed. Open it to turn on the private tunnel Locus needs, then come back here."
-                         : "LocalDevVPN creates a private tunnel Locus uses to talk to your phone’s location system. Install it, turn it on, then you’re ready to teleport.")
+                         : "LocalDevVPN creates a private tunnel Locus uses to talk to your phone’s location system. Install it, turn it on, then you’re ready to teleport."))
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -346,7 +346,7 @@ struct SetupFlowView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: localDevVPNInstalled ? "lock.shield.fill" : "apple.logo")
-                        Text(localDevVPNInstalled ? "Open LocalDevVPN" : "Get LocalDevVPN")
+                        Text(LocalizedStringKey(localDevVPNInstalled ? "Open LocalDevVPN" : "Get LocalDevVPN"))
                             .fontWeight(.semibold)
                     }
                     .frame(maxWidth: .infinity)
@@ -373,9 +373,9 @@ struct SetupFlowView: View {
                 .foregroundStyle(LocusTheme.accent)
                 .frame(width: 28, height: 28)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.subheadline.weight(.semibold))
-                Text(detail)
+                Text(LocalizedStringKey(detail))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -387,7 +387,7 @@ struct SetupFlowView: View {
 
     private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.headline)
                 .foregroundStyle(.black)
                 .frame(maxWidth: .infinity)
