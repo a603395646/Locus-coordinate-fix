@@ -9,6 +9,7 @@ struct SettingsView: View {
 
     @State private var showImporter = false
     @State private var showPairOnDevice = false
+    @State private var isCreatingLockdownPairing = false
     @State private var showNameEasterEgg = false
     @State private var tunnelIP = TunnelConfig.targetIP
     @AppStorage(MapDatumMode.defaultsKey) private var mapDatumMode = MapDatumMode.automaticChina.rawValue
@@ -53,10 +54,32 @@ struct SettingsView: View {
 
                     if LocationEngine.requiresLockdownPairingRecord {
                         LabeledContent {
-                            Text(LocalizedStringKey(LocationEngine.hasLockdownPairingFile ? "Installed" : "Missing"))
-                                .foregroundStyle(LocationEngine.hasLockdownPairingFile ? LocusTheme.statusGood : LocusTheme.statusWarn)
+                            Text(LocalizedStringKey(pairing.hasLockdownPairingFile ? "Installed" : "Missing"))
+                                .foregroundStyle(pairing.hasLockdownPairingFile ? LocusTheme.statusGood : LocusTheme.statusWarn)
                         } label: {
                             Text("CoreDeviceProxy pairing")
+                        }
+
+                        if !pairing.hasLockdownPairingFile {
+                            Button {
+                                Task {
+                                    isCreatingLockdownPairing = true
+                                    defer { isCreatingLockdownPairing = false }
+                                    do {
+                                        try await pairing.createLockdownPairing(deviceIP: tunnelIP)
+                                        session.lastError = nil
+                                    } catch {
+                                        session.lastError = error.localizedDescription
+                                    }
+                                }
+                            } label: {
+                                if isCreatingLockdownPairing {
+                                    Label("Waiting for the iPhone Trust prompt…", systemImage: "hourglass")
+                                } else {
+                                    Label("Pair this iPhone for CoreDeviceProxy", systemImage: "lock.shield")
+                                }
+                            }
+                            .disabled(isCreatingLockdownPairing)
                         }
                     }
 
@@ -86,7 +109,7 @@ struct SettingsView: View {
                 } footer: {
                     Text(LocalizedStringKey(supportsOnDevicePairing
                          ? "On iOS 27, use Pair on this iPhone — no computer. Locus advertises a pairable host; confirm the 6-digit code under Settings › Privacy & Security › Developer Mode › Pair with Host. On older iOS, import an RPPairing file from idevice_pair (not a SideStore lockdown .mobiledevicepairing). LiveContainer: enable Fix File Picker on Locus, or use Paste / Share → LiveContainer → Locus."
-                         : "Import an RPPairing file from idevice_pair (not a SideStore lockdown .mobiledevicepairing). On iOS 18–26.3, Locus also needs a classic Lockdown pairing record from a trusted computer; it is stored separately. If the file picker fails (common in LiveContainer), enable Fix File Picker on the app, share the file into LiveContainer → Locus, or copy the plist and use Paste."))
+                         : "Import an RPPairing file from idevice_pair (not a SideStore lockdown .mobiledevicepairing). On iOS 18–26.3, tap Pair this iPhone for CoreDeviceProxy and accept the iOS Trust prompt when it appears; Locus stores that classic Lockdown record separately. If the file picker fails (common in LiveContainer), enable Fix File Picker on the app, share the file into LiveContainer → Locus, or copy the RPPairing plist and use Paste."))
                 }
 
                 Section {
