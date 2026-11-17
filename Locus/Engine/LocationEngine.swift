@@ -78,6 +78,8 @@ enum LocationEngine {
     private static let lockdownPairingFileName = "lockdown_pair_record.plist"
 
     static var isSessionActive: Bool { locationSimulation != nil }
+    static var requiresLockdownPairingRecord: Bool { shouldUseCoreDeviceProxy() }
+    static var hasLockdownPairingFile: Bool { FileManager.default.fileExists(atPath: lockdownPairingPath) }
 
     static func set(latitude: Double, longitude: Double, pairingPath: String, deviceIP: String) -> Result<Void, LocationEngineError> {
         let mapCoordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
