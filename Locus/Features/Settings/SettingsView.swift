@@ -51,6 +51,15 @@ struct SettingsView: View {
                             .foregroundStyle(pairing.hasPairingFile ? LocusTheme.statusGood : LocusTheme.statusWarn)
                     }
 
+                    if LocationEngine.requiresLockdownPairingRecord {
+                        LabeledContent {
+                            Text(LocalizedStringKey(LocationEngine.hasLockdownPairingFile ? "Installed" : "Missing"))
+                                .foregroundStyle(LocationEngine.hasLockdownPairingFile ? LocusTheme.statusGood : LocusTheme.statusWarn)
+                        } label: {
+                            Text("CoreDeviceProxy pairing")
+                        }
+                    }
+
                     if supportsOnDevicePairing {
                         Button {
                             showPairOnDevice = true
@@ -77,11 +86,11 @@ struct SettingsView: View {
                 } footer: {
                     Text(LocalizedStringKey(supportsOnDevicePairing
                          ? "On iOS 27, use Pair on this iPhone — no computer. Locus advertises a pairable host; confirm the 6-digit code under Settings › Privacy & Security › Developer Mode › Pair with Host. On older iOS, import an RPPairing file from idevice_pair (not a SideStore lockdown .mobiledevicepairing). LiveContainer: enable Fix File Picker on Locus, or use Paste / Share → LiveContainer → Locus."
-                         : "Import an RPPairing file from idevice_pair (not a SideStore lockdown .mobiledevicepairing). If the file picker fails (common in LiveContainer), enable Fix File Picker on the app, share the file into LiveContainer → Locus, or copy the plist and use Paste."))
+                         : "Import an RPPairing file from idevice_pair (not a SideStore lockdown .mobiledevicepairing). On iOS 18–26.3, Locus also needs a classic Lockdown pairing record from a trusted computer; it is stored separately. If the file picker fails (common in LiveContainer), enable Fix File Picker on the app, share the file into LiveContainer → Locus, or copy the plist and use Paste."))
                 }
 
                 Section {
-                    TextField("Device tunnel IP", text: $tunnelIP)
+                    TextField("Device IP (LocalDevVPN)", text: $tunnelIP)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .onSubmit {
@@ -91,7 +100,7 @@ struct SettingsView: View {
                         Text(LocalizedStringKey(LocalDevVPN.isConnected ? "Connected" : "Not connected"))
                             .foregroundStyle(LocalDevVPN.isConnected ? LocusTheme.statusGood : LocusTheme.statusWarn)
                     }
-                    Button("Save tunnel IP") {
+                    Button("Save Device IP") {
                         TunnelConfig.setTargetIP(tunnelIP)
                     }
                     Button {
@@ -110,7 +119,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Tunnel")
                 } footer: {
-                    Text("Connect LocalDevVPN before teleporting. Default tunnel IP is 10.7.0.1. Start a spoof on Wi‑Fi first; it can keep working on cellular afterward.")
+                    Text("Connect LocalDevVPN before teleporting. The Device IP is 10.7.0.1 by default (not the Tunnel IP 10.7.1.1). Start a spoof on Wi‑Fi first; it can keep working on cellular afterward.")
                 }
 
                 Section {
