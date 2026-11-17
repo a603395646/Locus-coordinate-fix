@@ -53,18 +53,6 @@ final class PairingStore: ObservableObject {
         hasLockdownPairingFile = FileManager.default.fileExists(atPath: lockdownPairingURL.path)
     }
 
-    /// Creates a separate classic Lockdown record for CoreDeviceProxy. The
-    /// system may ask the user to unlock the iPhone and accept a Trust prompt.
-    func createLockdownPairing(deviceIP: String) async throws {
-        let error = await Task.detached(priority: .userInitiated) {
-            LocationEngine.createLockdownPairRecord(deviceIP: deviceIP)
-        }.value
-        if let error {
-            throw LockdownPairingError.failed(error)
-        }
-        hasLockdownPairingFile = LocationEngine.hasLockdownPairingFile
-    }
-
     func importPairing(from sourceURL: URL) throws {
         let accessing = sourceURL.startAccessingSecurityScopedResource()
         defer { if accessing { sourceURL.stopAccessingSecurityScopedResource() } }
@@ -141,18 +129,6 @@ enum PairingImportError: LocalizedError {
             return LocusLocalization.string("Clipboard is empty. Copy your RPPairing plist text (or the file), then try Paste again.")
         case .invalidContents:
             return LocusLocalization.string("That doesn’t look like an RPPairing plist. Copy the full pairing file contents and try again.")
-        }
-    }
-}
-
-
-enum LockdownPairingError: LocalizedError {
-    case failed(String)
-
-    var errorDescription: String? {
-        switch self {
-        case .failed(let message):
-            return message
         }
     }
 }
