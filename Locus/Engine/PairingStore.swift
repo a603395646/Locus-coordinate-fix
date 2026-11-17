@@ -5,9 +5,11 @@ import UIKit
 @MainActor
 final class PairingStore: ObservableObject {
     @Published private(set) var hasPairingFile = false
+    @Published private(set) var hasLockdownPairingFile = false
     @Published var lastError: String?
 
     static let fileName = "rp_pairing_file.plist"
+    static let lockdownFileName = "lockdown_pair_record.plist"
     static let supportedTypes: [UTType] = {
         var types: [UTType] = [
             .item,          // anything — sideloaded plists often lack a proper UTI
@@ -35,6 +37,10 @@ final class PairingStore: ObservableObject {
         directoryURL.appendingPathComponent(Self.fileName)
     }
 
+    var lockdownPairingURL: URL {
+        directoryURL.appendingPathComponent(Self.lockdownFileName)
+    }
+
     var pairingPath: String { pairingURL.path }
 
     init() {
@@ -44,6 +50,19 @@ final class PairingStore: ObservableObject {
     func refresh() {
         try? FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         hasPairingFile = FileManager.default.fileExists(atPath: pairingURL.path)
+        hasLockdownPairingFile = FileManager.default.fileExists(atPath: lockdownPairingURL.path)
+    }
+
+    /// Creates a separate classic Lockdown record for CoreDeviceProxy. The
+    /// system may ask the user to unlock the iPhone and accept a Trust prompt.
+    func createLockdownPairing(deviceIP: String) async throws {
+        let error = await Task.detached(priority: .userInitiated) {
+            LocationEngine.createLockdownPairRecord(deviceIP: deviceIP)
+        }.value
+        if let error {
+            throw LockdownPairingError.failed(error)
+        }
+        hasLockdownPairingFile = LocationEngine.hasLockdownPairingFile
     }
 
     func importPairing(from sourceURL: URL) throws {
@@ -122,6 +141,18 @@ enum PairingImportError: LocalizedError {
             return LocusLocalization.string("Clipboard is empty. Copy your RPPairing plist text (or the file), then try Paste again.")
         case .invalidContents:
             return LocusLocalization.string("That doesn’t look like an RPPairing plist. Copy the full pairing file contents and try again.")
+        }
+    }
+}
+
+
+enum LockdownPairingError: LocalizedError {
+    case failed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .failed(let message):
+            return message
         }
     }
 }
