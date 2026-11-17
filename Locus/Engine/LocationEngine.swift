@@ -279,14 +279,12 @@ enum LocationEngine {
         if let error = consumeError(tunnel_create_usb(provider, &newAdapter, &newHandshake),
                                     fallback: "CoreDeviceProxy tunnel_create_usb failed") {
             lastFailureDetail = error
-            heartbeat.stop()
-            lockdownHeartbeat = nil
+            cleanup()
             return tunnelCreate
         }
         guard let newAdapter, let newHandshake else {
             lastFailureDetail = "CoreDeviceProxy returned an empty adapter or RSD handshake."
-            heartbeat.stop()
-            lockdownHeartbeat = nil
+            cleanup()
             return tunnelCreate
         }
 
