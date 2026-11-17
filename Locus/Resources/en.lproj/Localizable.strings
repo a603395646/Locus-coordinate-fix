@@ -300,3 +300,14 @@
 "Location API" = "Location API";
 "Settable fields" = "Settable fields";
 "Altitude and motion" = "Altitude and motion";
+
+"CoreDeviceProxy pairing" = "CoreDeviceProxy pairing";
+"Installed" = "Installed";
+"Missing" = "Missing";
+"Device IP (LocalDevVPN)" = "Device IP (LocalDevVPN)";
+"Save Device IP" = "Save Device IP";
+"Import an RPPairing file from idevice_pair (not a SideStore lockdown .mobiledevicepairing). On iOS 18–26.3, Locus also needs a classic Lockdown pairing record from a trusted computer; it is stored separately. If the file picker fails (common in LiveContainer), enable Fix File Picker on the app, share the file into LiveContainer → Locus, or copy the plist and use Paste." = "Import an RPPairing file from idevice_pair (not a SideStore lockdown .mobiledevicepairing). On iOS 18–26.3, Locus also needs a classic Lockdown pairing record from a trusted computer; it is stored separately. If the file picker fails (common in LiveContainer), enable Fix File Picker on the app, share the file into LiveContainer → Locus, or copy the plist and use Paste.";
+"Connect LocalDevVPN before teleporting. The Device IP is 10.7.0.1 by default (not the Tunnel IP 10.7.1.1). Start a spoof on Wi‑Fi first; it can keep working on cellular afterward." = "Connect LocalDevVPN before teleporting. The Device IP is 10.7.0.1 by default (not the Tunnel IP 10.7.1.1). Start a spoof on Wi‑Fi first; it can keep working on cellular afterward.";
+"Could not open the Apple developer tunnel. Check LocalDevVPN and the pairing record." = "Could not open the Apple developer tunnel. Check LocalDevVPN and the pairing record.";
+"Device IP is invalid. Check Settings → Device IP (usually 10.7.0.1)." = "Device IP is invalid. Check Settings → Device IP (usually 10.7.0.1).";
+"This iOS version needs a classic Lockdown pairing record for CoreDeviceProxy. The existing RPPairing file alone is not enough. Import the trusted computer pairing record into Locus, then try again." = "This iOS version needs a classic Lockdown pairing record for CoreDeviceProxy. The existing RPPairing file alone is not enough. Import the trusted computer pairing record into Locus, then try again.";
